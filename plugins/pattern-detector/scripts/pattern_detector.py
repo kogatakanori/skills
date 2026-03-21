@@ -257,11 +257,58 @@ class PatternDetector:
         print("  python scripts/pattern_detector.py accept <pattern-id>")
         print("  python scripts/pattern_detector.py reject <pattern-id>")
 
+    def config_show(self):
+        """Show current configuration."""
+        config = self.storage.load_config()
+
+        print("=== Pattern Detector Configuration ===\n")
+        print(f"Enabled: {config.get('enabled', True)}")
+        print(f"Detection Sensitivity: {config.get('detection_sensitivity', 'medium')}")
+        print(f"Minimum Frequency: {config.get('min_frequency', 3)}")
+        print(f"Auto Suggest: {config.get('auto_suggest', False)}")
+        print(f"Suggestion Threshold: {config.get('suggestion_threshold', 5)}")
+
+        exclusions = config.get('excluded_patterns', [])
+        print(f"\nExcluded Patterns: {len(exclusions)}")
+        if exclusions:
+            for exc in exclusions:
+                print(f"  - [{exc['type']}] {exc['pattern']}")
+
+        print(f"\nConfiguration file: {self.storage.config_file}")
+
+    def config_set(self, key: str, value: str):
+        """Set configuration value."""
+        # Parse value
+        if value.lower() in ('true', 'false'):
+            value = value.lower() == 'true'
+        elif value.isdigit():
+            value = int(value)
+
+        config = self.storage.update_config(key, value)
+        print(f"✓ Updated {key} = {value}")
+
+    def config_exclude(self, exc_type: str, pattern: str):
+        """Add exclusion pattern."""
+        self.storage.add_exclusion(exc_type, pattern)
+        print(f"✓ Added exclusion: [{exc_type}] {pattern}")
+
+    def config_unexclude(self, exc_type: str, pattern: str):
+        """Remove exclusion pattern."""
+        if self.storage.remove_exclusion(exc_type, pattern):
+            print(f"✓ Removed exclusion: [{exc_type}] {pattern}")
+        else:
+            print(f"✗ Exclusion not found: [{exc_type}] {pattern}")
+
+    def config_reset(self):
+        """Reset configuration to defaults."""
+        self.storage.reset_config()
+        print("✓ Configuration reset to defaults")
+
 
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(description='Pattern detection for Claude Code')
-    subparsers = parser.add_parsers('command', help='Command to execute')
+    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
 
     # Analyze command
     parser_analyze = subparsers.add_parser('analyze', help='Analyze conversation history')
@@ -274,6 +321,36 @@ def main():
     parser_suggest.set_defaults(
         func=lambda args: PatternDetector().suggest(args.type, args.min_savings)
     )
+
+    # Config command
+    parser_config = subparsers.add_parser('config', help='Manage configuration')
+    config_subparsers = parser_config.add_subparsers(dest='config_action', help='Config action')
+
+    # Config show
+    parser_config_show = config_subparsers.add_parser('show', help='Show current configuration')
+    parser_config_show.set_defaults(func=lambda args: PatternDetector().config_show())
+
+    # Config set
+    parser_config_set = config_subparsers.add_parser('set', help='Set configuration value')
+    parser_config_set.add_argument('key', help='Configuration key')
+    parser_config_set.add_argument('value', help='Configuration value')
+    parser_config_set.set_defaults(func=lambda args: PatternDetector().config_set(args.key, args.value))
+
+    # Config exclude
+    parser_config_exclude = config_subparsers.add_parser('exclude', help='Add exclusion pattern')
+    parser_config_exclude.add_argument('type', choices=['command', 'file', 'conversation'], help='Exclusion type')
+    parser_config_exclude.add_argument('pattern', help='Pattern to exclude')
+    parser_config_exclude.set_defaults(func=lambda args: PatternDetector().config_exclude(args.type, args.pattern))
+
+    # Config unexclude
+    parser_config_unexclude = config_subparsers.add_parser('unexclude', help='Remove exclusion pattern')
+    parser_config_unexclude.add_argument('type', choices=['command', 'file', 'conversation'], help='Exclusion type')
+    parser_config_unexclude.add_argument('pattern', help='Pattern to remove')
+    parser_config_unexclude.set_defaults(func=lambda args: PatternDetector().config_unexclude(args.type, args.pattern))
+
+    # Config reset
+    parser_config_reset = config_subparsers.add_parser('reset', help='Reset configuration to defaults')
+    parser_config_reset.set_defaults(func=lambda args: PatternDetector().config_reset())
 
     # Parse arguments
     args = parser.parse_args()

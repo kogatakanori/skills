@@ -139,7 +139,7 @@ class PatternStorage:
             config: Configuration dictionary
         """
         with open(self.config_file, 'w', encoding='utf-8') as f:
-            json.dumps(config, f, indent=2)
+            json.dump(config, f, indent=2)
 
     def load_config(self) -> Dict:
         """
