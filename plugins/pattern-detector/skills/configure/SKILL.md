@@ -1,8 +1,7 @@
 ---
 name: configure
 description: Configure pattern detection settings including sensitivity, exclusions, and notification preferences
-disable-model-invocation: true
-allowed-tools: Bash(python *), Read, Write
+user-invocable: true
 ---
 
 # Pattern Detection Configuration

@@ -59,6 +59,7 @@ Run pattern detection on your conversation history:
 ```
 
 This will:
+
 - Read your `~/.claude/history.jsonl`
 - Detect repeated commands and workflows
 - Display patterns with frequency and time savings estimates
@@ -73,6 +74,7 @@ See detailed automation suggestions:
 ```
 
 For each pattern, you'll see:
+
 - Pattern description and frequency
 - Estimated time savings
 - Suggested automation approach (skill vs hook)
@@ -93,11 +95,13 @@ Adjust sensitivity and exclusions:
 Analyze conversation history to detect repetitive patterns.
 
 **Example:**
+
 ```bash
 /pattern:analyze
 ```
 
 **Output:**
+
 ```
 === Command Patterns ===
 Found 3 repeated commands
@@ -118,11 +122,13 @@ Found 3 repeated commands
 Show automation suggestions for detected patterns.
 
 **Options:**
+
 - `--type skill`: Show only skill suggestions
 - `--type hook`: Show only hook suggestions
 - `--min-savings <seconds>`: Filter by minimum time savings
 
 **Example:**
+
 ```bash
 /pattern:suggest --min-savings 30
 ```
@@ -132,18 +138,21 @@ Show automation suggestions for detected patterns.
 Configure pattern detection settings.
 
 **Available settings:**
+
 - `sensitivity`: low, medium (default), high
 - `min-frequency`: Minimum occurrences (default: 3)
 - `auto-suggest`: Enable automatic suggestions (default: false)
 - `suggestion-threshold`: Occurrences before auto-suggesting (default: 5)
 
 **Example:**
+
 ```bash
 python scripts/pattern_detector.py config set sensitivity high
 python scripts/pattern_detector.py config set min-frequency 5
 ```
 
 **Exclusions:**
+
 ```bash
 # Exclude a command from detection
 python scripts/pattern_detector.py config exclude command "ls"
@@ -257,6 +266,7 @@ your-project/
 ### Example 1: Repeated Test Command
 
 **Detected Pattern:**
+
 ```
 Command: npm test
 Frequency: 7 times
@@ -264,11 +274,11 @@ Time saved: ~35 seconds
 ```
 
 **Generated Skill:**
-```yaml
+
+````yaml
 ---
 name: test
 description: Run test suite (detected 7 times)
-disable-model-invocation: true
 ---
 
 # Run Tests
@@ -277,17 +287,19 @@ Execute the test suite:
 
 ```bash
 npm test
-```
-```
+````
+
+````
 
 **Usage:**
 ```bash
 /test
-```
+````
 
 ### Example 2: Test & Commit Workflow
 
 **Detected Pattern:**
+
 ```
 Sequence:
 1. npm test
@@ -298,13 +310,13 @@ Time saved: ~50 seconds
 ```
 
 **Generated Skill:**
+
 ```yaml
 ---
 name: test-and-commit
 description: Run tests and commit if they pass
-disable-model-invocation: true
----
 
+---
 # Test and Commit Workflow
 
 1. Run npm test
@@ -314,6 +326,7 @@ disable-model-invocation: true
 ```
 
 **Usage:**
+
 ```bash
 /test-and-commit
 ```
@@ -360,18 +373,21 @@ python scripts/skill_generator.py
 ### Future Enhancements (Roadmap)
 
 **Phase 2 Features:**
+
 - [ ] Automatic pattern detection with hooks
 - [ ] Real-time suggestions during workflow
 - [ ] File operation pattern detection
 - [ ] Custom automation templates
 
 **Phase 3 Features:**
+
 - [ ] Sequence detection (multi-step workflows)
 - [ ] Agent-based interactive customization
 - [ ] Statistical analysis dashboard
 - [ ] Cross-project pattern analysis
 
 **Phase 4 Features:**
+
 - [ ] Integration with hookify plugin
 - [ ] Semantic similarity detection
 - [ ] ML-based pattern prediction
@@ -401,6 +417,7 @@ Contributions welcome! Please:
 ## Support
 
 For issues or questions:
+
 - Open an issue on GitHub
 - Check existing issues for solutions
 - Review the [troubleshooting](#troubleshooting) section

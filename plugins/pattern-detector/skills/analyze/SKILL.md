@@ -1,8 +1,7 @@
 ---
 name: analyze
 description: Analyze conversation history to detect repetitive task patterns and suggest automation opportunities
-disable-model-invocation: true
-allowed-tools: Bash(python *)
+user-invocable: true
 ---
 
 # Pattern Analysis

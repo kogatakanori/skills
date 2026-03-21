@@ -52,7 +52,6 @@ class SkillGenerator:
             preview = f"""---
 name: {skill_name}
 description: {command} (detected {frequency} times)
-disable-model-invocation: true
 ---
 
 # {skill_name.replace('-', ' ').title()}
@@ -116,7 +115,6 @@ This will run '{command}' automatically after file edits.
         preview = f"""---
 name: {skill_name}
 description: Workflow sequence (detected {frequency} times)
-disable-model-invocation: true
 ---
 
 # Automated Workflow

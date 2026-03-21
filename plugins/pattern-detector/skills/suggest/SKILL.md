@@ -1,8 +1,7 @@
 ---
 name: suggest
 description: Show detailed suggestions for automating detected patterns with skills or hooks
-disable-model-invocation: true
-allowed-tools: Bash(python *)
+user-invocable: true
 ---
 
 # Pattern Automation Suggestions
@@ -22,6 +21,7 @@ python ${CLAUDE_SKILL_DIR}/../../scripts/pattern_detector.py suggest
 For each suggested automation, you'll see:
 
 ### Pattern Information
+
 - **Pattern Type**: Command, File Edit, or Workflow sequence
 - **Description**: What the pattern does
 - **Frequency**: How many times it's been detected
@@ -29,6 +29,7 @@ For each suggested automation, you'll see:
 - **Estimated Time Saved**: Projected efficiency gain
 
 ### Automation Recommendation
+
 - **Suggested Approach**: Skill or Hook
 - **Implementation Preview**: Example SKILL.md or hook configuration
 - **Complexity**: Easy, Medium, or Complex
@@ -38,16 +39,19 @@ For each suggested automation, you'll see:
 For each suggestion, you can:
 
 1. **Accept**: Generate the skill or hook automatically
+
    ```bash
    python ${CLAUDE_SKILL_DIR}/../../scripts/pattern_detector.py accept <pattern-id>
    ```
 
 2. **Customize**: Use an Agent to interactively refine the automation
+
    ```bash
    python ${CLAUDE_SKILL_DIR}/../../scripts/pattern_detector.py customize <pattern-id>
    ```
 
 3. **Reject**: Mark the pattern as not worth automating
+
    ```bash
    python ${CLAUDE_SKILL_DIR}/../../scripts/pattern_detector.py reject <pattern-id>
    ```
@@ -70,7 +74,6 @@ Pattern #1: Repeated Test & Commit Workflow
    ---
    name: test-and-commit
    description: Run tests and commit changes if they pass
-   disable-model-invocation: true
    ---
 
    Run the test suite and commit changes:
@@ -85,6 +88,7 @@ Actions: [A]ccept | [C]ustomize | [R]eject | [S]nooze
 ## Filtering Suggestions
 
 Show only specific types:
+
 ```bash
 # Show only skill suggestions
 python ${CLAUDE_SKILL_DIR}/../../scripts/pattern_detector.py suggest --type skill
