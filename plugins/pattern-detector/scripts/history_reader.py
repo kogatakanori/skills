@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
 
+from constants import BASH_INDICATORS
+
 
 class HistoryReader:
     """Reads and parses Claude Code conversation history."""
@@ -124,16 +126,7 @@ class HistoryReader:
         for entry in entries:
             display = entry.get('display', '')
 
-            # Simple heuristic: looks like a bash command if it starts with common commands
-            # or contains shell operators
-            bash_indicators = [
-                'npm ', 'git ', 'python ', 'node ', 'yarn ', 'pnpm ',
-                'cd ', 'ls ', 'cat ', 'grep ', 'find ', 'sed ', 'awk ',
-                'mkdir ', 'rm ', 'cp ', 'mv ', 'touch ', 'chmod ',
-                'docker ', 'kubectl ', 'cargo ', 'go ', 'rustc ',
-            ]
-
-            if any(display.startswith(cmd) for cmd in bash_indicators):
+            if any(display.startswith(cmd) for cmd in BASH_INDICATORS):
                 commands.append({
                     'command': display,
                     'timestamp': entry.get('timestamp'),
@@ -167,15 +160,8 @@ class HistoryReader:
             if display.strip().startswith('/'):
                 continue
 
-            # Skip if it's a bash command indicator
-            bash_indicators = [
-                'npm ', 'git ', 'python ', 'node ', 'yarn ', 'pnpm ',
-                'cd ', 'ls ', 'cat ', 'grep ', 'find ', 'sed ', 'awk ',
-                'mkdir ', 'rm ', 'cp ', 'mv ', 'touch ', 'chmod ',
-                'docker ', 'kubectl ', 'cargo ', 'go ', 'rustc ',
-            ]
-
-            if any(display.startswith(cmd) for cmd in bash_indicators):
+            # Skip if it's a bash command
+            if any(display.startswith(cmd) for cmd in BASH_INDICATORS):
                 continue
 
             prompts.append({

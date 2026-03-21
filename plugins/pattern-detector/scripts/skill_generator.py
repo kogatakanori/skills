@@ -4,6 +4,8 @@
 from pathlib import Path
 from typing import Dict
 
+from constants import STOP_WORDS
+
 
 class SkillGenerator:
     """Generates skills and hooks from detected patterns."""
@@ -205,14 +207,7 @@ user_invocable: true
         words = re.findall(r'\b\w+\b', prompt.lower())
 
         # Filter out common words
-        stop_words = {
-            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-            'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
-            'please', 'can', 'you', 'could', 'would', 'should', 'make', 'do',
-            'してください', 'して', 'を', 'の', 'に', 'が', 'は', 'で'
-        }
-
-        meaningful_words = [w for w in words if w not in stop_words and len(w) > 2]
+        meaningful_words = [w for w in words if w not in STOP_WORDS and len(w) > 2]
 
         # Take first 3 meaningful words
         skill_parts = meaningful_words[:3]

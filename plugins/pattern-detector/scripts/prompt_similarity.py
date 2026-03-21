@@ -2,8 +2,10 @@
 """Prompt similarity detection for finding repeated user instructions."""
 
 import re
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 from difflib import SequenceMatcher
+
+from constants import STOP_WORDS
 
 
 class PromptSimilarity:
@@ -55,20 +57,8 @@ class PromptSimilarity:
         # Split into words
         words = re.findall(r'\b\w+\b', prompt)
 
-        # Filter out common stop words (Japanese + English)
-        stop_words = {
-            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-            'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
-            'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
-            'would', 'should', 'could', 'can', 'may', 'might', 'must', 'shall',
-            'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it',
-            'we', 'they', 'my', 'your', 'his', 'her', 'its', 'our', 'their',
-            'me', 'him', 'her', 'us', 'them',
-            # Japanese particles (romanized)
-            'no', 'ni', 'wo', 'ga', 'wa', 'de', 'ka', 'ne', 'yo', 'na'
-        }
-
-        keywords = {word for word in words if word not in stop_words and len(word) > 2}
+        # Filter out common stop words
+        keywords = {word for word in words if word not in STOP_WORDS and len(word) > 2}
 
         return keywords
 
@@ -171,11 +161,15 @@ class PromptSimilarity:
         if not prompts:
             return []
 
+        # Pre-compute normalized prompts and keywords for efficiency
+        normalized = [self.normalize_prompt(p) for p in prompts]
+        keywords_cache = [self.extract_keywords(norm) for norm in normalized]
+
         # Track which prompts have been clustered
         clustered = set()
         clusters = []
 
-        for i, prompt1 in enumerate(prompts):
+        for i in range(len(prompts)):
             if i in clustered:
                 continue
 
@@ -184,11 +178,16 @@ class PromptSimilarity:
             similarities = []
 
             # Find all similar prompts
-            for j, prompt2 in enumerate(prompts):
-                if j <= i or j in clustered:
+            for j in range(i + 1, len(prompts)):
+                if j in clustered:
                     continue
 
-                similarity = self.calculate_similarity(prompt1, prompt2)
+                # Calculate similarity using cached values
+                similarity = self._calculate_similarity_cached(
+                    normalized[i], normalized[j],
+                    keywords_cache[i], keywords_cache[j]
+                )
+
                 if similarity >= self.similarity_threshold:
                     cluster_indices.append(j)
                     similarities.append(similarity)
@@ -198,9 +197,44 @@ class PromptSimilarity:
             if len(cluster_indices) >= min_cluster_size:
                 clustered.add(i)
                 avg_similarity = sum(similarities) / len(similarities) if similarities else 1.0
-                clusters.append((prompt1, cluster_indices, avg_similarity))
+                clusters.append((prompts[i], cluster_indices, avg_similarity))
 
         return clusters
+
+    def _calculate_similarity_cached(
+        self,
+        norm1: str,
+        norm2: str,
+        keywords1: Set[str],
+        keywords2: Set[str]
+    ) -> float:
+        """
+        Calculate similarity using pre-computed normalized text and keywords.
+
+        Args:
+            norm1: Pre-normalized first text
+            norm2: Pre-normalized second text
+            keywords1: Pre-extracted keywords from first text
+            keywords2: Pre-extracted keywords from second text
+
+        Returns:
+            Similarity score (0-1)
+        """
+        # If prompts are identical after normalization
+        if norm1 == norm2:
+            return 1.0
+
+        # Calculate keyword similarity (Jaccard)
+        keyword_sim = self.jaccard_similarity(keywords1, keywords2)
+
+        # Calculate sequence similarity
+        sequence_sim = self.sequence_similarity(norm1, norm2)
+
+        # Weighted average (keyword similarity is more important for semantic meaning)
+        # 60% keyword similarity, 40% sequence similarity
+        overall_sim = (keyword_sim * 0.6) + (sequence_sim * 0.4)
+
+        return overall_sim
 
     def extract_common_pattern(self, prompts: List[str]) -> str:
         """

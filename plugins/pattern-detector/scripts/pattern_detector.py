@@ -212,10 +212,9 @@ class PatternDetector:
             # Calculate time savings (rough estimate: 30 seconds per manual instruction)
             estimated_time_saved = frequency * 30
 
-            # Extract common pattern
-            common_pattern = self.prompt_similarity.extract_common_pattern(
-                [p['prompt'] for p in cluster_prompts]
-            )
+            # Extract common pattern (use direct index access to avoid redundant list comprehension)
+            prompt_texts = [prompts[i]['prompt'] for i in indices]
+            common_pattern = self.prompt_similarity.extract_common_pattern(prompt_texts)
 
             patterns.append({
                 'type': 'prompt',
@@ -226,7 +225,7 @@ class PatternDetector:
                 'occurrences': cluster_prompts,
                 'estimated_time_saved': estimated_time_saved,
                 'confidence': avg_similarity,
-                'examples': [p['prompt'] for p in cluster_prompts[:3]]  # First 3 examples
+                'examples': prompt_texts[:3]  # First 3 examples
             })
 
         # Sort by frequency (descending)
