@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from history_reader import HistoryReader, format_timestamp
 from storage import PatternStorage
 from skill_generator import SkillGenerator
+from prompt_similarity import PromptSimilarity
 
 
 class PatternDetector:
@@ -30,6 +31,7 @@ class PatternDetector:
         self.history_reader = HistoryReader()
         self.storage = PatternStorage(self.project_dir)
         self.skill_generator = SkillGenerator()
+        self.prompt_similarity = PromptSimilarity(similarity_threshold=0.7)
 
     def detect_command_patterns(
         self,
@@ -153,6 +155,85 @@ class PatternDetector:
 
         return patterns
 
+    def detect_prompt_patterns(
+        self,
+        min_frequency: int = 3,
+        window_size: int = 200
+    ) -> List[Dict]:
+        """
+        Detect repeated prompt patterns (similar user instructions).
+
+        Args:
+            min_frequency: Minimum occurrences to consider a pattern
+            window_size: Number of recent entries to analyze
+
+        Returns:
+            List of detected prompt patterns
+        """
+        # Get recent history
+        recent_entries = self.history_reader.read_recent(window_size)
+
+        # Extract user prompts
+        prompts = self.history_reader.extract_user_prompts(recent_entries)
+
+        if len(prompts) < min_frequency:
+            return []
+
+        # Extract prompt texts
+        prompt_texts = [p['prompt'] for p in prompts]
+
+        # Find clusters of similar prompts
+        clusters = self.prompt_similarity.find_similar_prompts(
+            prompt_texts,
+            min_cluster_size=min_frequency
+        )
+
+        # Load exclusions
+        config = self.storage.load_config()
+        exclusions = {
+            exc['pattern']
+            for exc in config.get('excluded_patterns', [])
+            if exc['type'] == 'prompt'
+        }
+
+        # Build pattern list
+        patterns = []
+        for representative, indices, avg_similarity in clusters:
+            # Skip excluded prompts
+            if representative in exclusions:
+                continue
+
+            # Get all prompts in this cluster
+            cluster_prompts = [prompts[i] for i in indices]
+
+            # Calculate frequency
+            frequency = len(indices)
+
+            # Calculate time savings (rough estimate: 30 seconds per manual instruction)
+            estimated_time_saved = frequency * 30
+
+            # Extract common pattern
+            common_pattern = self.prompt_similarity.extract_common_pattern(
+                [p['prompt'] for p in cluster_prompts]
+            )
+
+            patterns.append({
+                'type': 'prompt',
+                'pattern': common_pattern,
+                'frequency': frequency,
+                'first_seen': min(p['timestamp'] for p in cluster_prompts),
+                'last_seen': max(p['timestamp'] for p in cluster_prompts),
+                'occurrences': cluster_prompts,
+                'estimated_time_saved': estimated_time_saved,
+                'confidence': avg_similarity,
+                'examples': [p['prompt'] for p in cluster_prompts[:3]]  # First 3 examples
+            })
+
+        # Sort by frequency (descending)
+        patterns.sort(key=lambda p: p['frequency'], reverse=True)
+
+        return patterns
+
     def analyze(self) -> Dict:
         """
         Run full pattern analysis.
@@ -170,6 +251,9 @@ class PatternDetector:
 
         # Detect sequence patterns
         sequence_patterns = self.detect_sequence_patterns(min_frequency=min_frequency)
+
+        # Detect prompt patterns
+        prompt_patterns = self.detect_prompt_patterns(min_frequency=min_frequency)
 
         # Display results
         print(f"=== Command Patterns ===")
@@ -198,14 +282,34 @@ class PatternDetector:
                 print(f"   Time saved if automated: ~{pattern['estimated_time_saved']}s")
                 print()
 
+        if prompt_patterns:
+            print(f"\n=== Prompt Patterns ===")
+            print(f"Found {len(prompt_patterns)} repeated prompts\n")
+
+            for i, pattern in enumerate(prompt_patterns[:10], 1):
+                first = format_timestamp(pattern['first_seen'])
+                last = format_timestamp(pattern['last_seen'])
+                print(f"{i}. Pattern: {pattern['pattern'][:80]}{'...' if len(pattern['pattern']) > 80 else ''}")
+                print(f"   Frequency: {pattern['frequency']} times")
+                print(f"   First seen: {first}")
+                print(f"   Last seen: {last}")
+                print(f"   Time saved if automated: ~{pattern['estimated_time_saved']}s")
+                print(f"   Confidence: {pattern['confidence']:.0%}")
+                if pattern.get('examples'):
+                    print(f"   Examples:")
+                    for ex in pattern['examples'][:2]:
+                        print(f"     - {ex[:60]}{'...' if len(ex) > 60 else ''}")
+                print()
+
         # Store detected patterns
-        all_patterns = command_patterns + sequence_patterns
+        all_patterns = command_patterns + sequence_patterns + prompt_patterns
         for pattern in all_patterns:
             self.storage.save_pattern(pattern)
 
         return {
             'command_patterns': command_patterns,
             'sequence_patterns': sequence_patterns,
+            'prompt_patterns': prompt_patterns,
             'total_patterns': len(all_patterns)
         }
 
@@ -338,13 +442,13 @@ def main():
 
     # Config exclude
     parser_config_exclude = config_subparsers.add_parser('exclude', help='Add exclusion pattern')
-    parser_config_exclude.add_argument('type', choices=['command', 'file', 'conversation'], help='Exclusion type')
+    parser_config_exclude.add_argument('type', choices=['command', 'file', 'prompt', 'conversation'], help='Exclusion type')
     parser_config_exclude.add_argument('pattern', help='Pattern to exclude')
     parser_config_exclude.set_defaults(func=lambda args: PatternDetector().config_exclude(args.type, args.pattern))
 
     # Config unexclude
     parser_config_unexclude = config_subparsers.add_parser('unexclude', help='Remove exclusion pattern')
-    parser_config_unexclude.add_argument('type', choices=['command', 'file', 'conversation'], help='Exclusion type')
+    parser_config_unexclude.add_argument('type', choices=['command', 'file', 'prompt', 'conversation'], help='Exclusion type')
     parser_config_unexclude.add_argument('pattern', help='Pattern to remove')
     parser_config_unexclude.set_defaults(func=lambda args: PatternDetector().config_unexclude(args.type, args.pattern))
 

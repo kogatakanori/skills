@@ -143,6 +143,50 @@ class HistoryReader:
 
         return commands
 
+    def extract_user_prompts(self, entries: List[Dict]) -> List[Dict]:
+        """
+        Extract user prompts from history entries.
+
+        Args:
+            entries: List of history entries
+
+        Returns:
+            List of dicts with prompt info (prompt, timestamp, project)
+        """
+        prompts = []
+
+        for entry in entries:
+            # Extract user messages from the display field
+            display = entry.get('display', '')
+
+            # Skip empty or very short prompts
+            if len(display.strip()) < 10:
+                continue
+
+            # Skip if it looks like a command (starts with /)
+            if display.strip().startswith('/'):
+                continue
+
+            # Skip if it's a bash command indicator
+            bash_indicators = [
+                'npm ', 'git ', 'python ', 'node ', 'yarn ', 'pnpm ',
+                'cd ', 'ls ', 'cat ', 'grep ', 'find ', 'sed ', 'awk ',
+                'mkdir ', 'rm ', 'cp ', 'mv ', 'touch ', 'chmod ',
+                'docker ', 'kubectl ', 'cargo ', 'go ', 'rustc ',
+            ]
+
+            if any(display.startswith(cmd) for cmd in bash_indicators):
+                continue
+
+            prompts.append({
+                'prompt': display,
+                'timestamp': entry.get('timestamp'),
+                'project': entry.get('project'),
+                'session': entry.get('sessionId')
+            })
+
+        return prompts
+
     def extract_file_operations(self, entries: List[Dict]) -> List[Dict]:
         """
         Extract file operation patterns from history entries.

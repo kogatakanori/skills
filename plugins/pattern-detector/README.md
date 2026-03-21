@@ -4,12 +4,13 @@ Automatically detect repetitive tasks in your Claude Code workflow and suggest c
 
 ## Overview
 
-Pattern Detector analyzes your conversation history to identify repeated commands, file operations, and workflows. When it finds patterns, it suggests automation opportunities and can even generate skills or hooks for you automatically.
+Pattern Detector analyzes your conversation history to identify repeated commands, user prompts, file operations, and workflows. Using semantic similarity detection, it can find patterns even when your instructions are worded differently. When it finds patterns, it suggests automation opportunities and can even generate skills or hooks for you automatically.
 
 ## Features
 
 - Analyze conversation history for repetitive patterns
 - Detect repeated Bash commands (3+ occurrences by default)
+- Detect repeated user prompts using semantic similarity (NEW!)
 - Identify multi-step workflow sequences
 - Suggest skills or hooks for automation
 - Auto-generate SKILL.md files
@@ -115,6 +116,23 @@ Found 3 repeated commands
 2. Command: git add . && git commit -m "..."
    Frequency: 4 times
    ...
+
+=== Prompt Patterns ===
+Found 2 repeated prompts
+
+1. Pattern: テストを実行して
+   Frequency: 7 times
+   First seen: 2024-03-15 10:15:30
+   Last seen: 2024-03-20 16:45:22
+   Time saved if automated: ~210s
+   Confidence: 85%
+   Examples:
+     - テストを実行してください
+     - テストを実行して
+
+2. Pattern: コミットしてください
+   Frequency: 5 times
+   ...
 ```
 
 ### `/pattern:suggest`
@@ -157,8 +175,12 @@ python scripts/pattern_detector.py config set min-frequency 5
 # Exclude a command from detection
 python scripts/pattern_detector.py config exclude command "ls"
 
+# Exclude a prompt pattern from detection
+python scripts/pattern_detector.py config exclude prompt "テストを実行"
+
 # Remove an exclusion
 python scripts/pattern_detector.py config unexclude command "ls"
+python scripts/pattern_detector.py config unexclude prompt "テストを実行"
 ```
 
 ## How It Works
@@ -168,8 +190,13 @@ python scripts/pattern_detector.py config unexclude command "ls"
 Pattern Detector analyzes your conversation history using multiple strategies:
 
 1. **Exact Command Matching**: Counts identical Bash commands
-2. **Sequence Detection**: Identifies repeated multi-step workflows
-3. **Frequency Threshold**: Only suggests patterns meeting minimum occurrences
+2. **Prompt Similarity Detection**: Identifies semantically similar user prompts using:
+   - Text normalization (lowercase, whitespace)
+   - Keyword extraction and Jaccard similarity
+   - Sequence matching for contextual similarity
+   - Configurable similarity threshold (default: 70%)
+3. **Sequence Detection**: Identifies repeated multi-step workflows
+4. **Frequency Threshold**: Only suggests patterns meeting minimum occurrences
 
 ### Automation Suggestion
 
@@ -234,6 +261,7 @@ pattern-detector/
 ├── scripts/
 │   ├── history_reader.py       # Parse history.jsonl
 │   ├── pattern_detector.py     # Main detection engine
+│   ├── prompt_similarity.py    # Prompt similarity detection
 │   ├── storage.py              # Pattern storage management
 │   └── skill_generator.py      # Generate SKILL.md files
 ├── config/
@@ -331,6 +359,54 @@ description: Run tests and commit if they pass
 /test-and-commit
 ```
 
+### Example 3: Repeated Prompt Pattern
+
+**Detected Pattern:**
+
+```
+Pattern: テストを実行してください
+Frequency: 8 times
+Similarity: 85%
+Examples:
+  - テストを実行してください
+  - テストを実行して
+  - Run the tests please
+Time saved: ~240 seconds
+```
+
+**Generated Skill:**
+
+```yaml
+---
+name: run-tests
+description: テストを実行してください
+user_invocable: true
+---
+
+# Run Tests
+
+このスキルは、繰り返し実行されたプロンプトパターンから自動生成されました。
+
+## 元のプロンプト
+
+テストを実行してください
+
+## 検出情報
+
+- 頻度: 8回
+- 推定時間節約: ~240秒
+
+## 実行内容
+
+テストを実行してください
+```
+
+**Usage:**
+
+```bash
+/run-tests
+```
+
 ## Troubleshooting
 
 ### No patterns detected
@@ -374,6 +450,7 @@ python scripts/skill_generator.py
 
 **Phase 2 Features:**
 
+- [x] ✅ Semantic prompt similarity detection
 - [ ] Automatic pattern detection with hooks
 - [ ] Real-time suggestions during workflow
 - [ ] File operation pattern detection
@@ -381,17 +458,18 @@ python scripts/skill_generator.py
 
 **Phase 3 Features:**
 
-- [ ] Sequence detection (multi-step workflows)
+- [x] ✅ Sequence detection (multi-step workflows)
 - [ ] Agent-based interactive customization
 - [ ] Statistical analysis dashboard
 - [ ] Cross-project pattern analysis
+- [ ] Improved multilingual prompt detection (Japanese + English)
 
 **Phase 4 Features:**
 
 - [ ] Integration with hookify plugin
-- [ ] Semantic similarity detection
-- [ ] ML-based pattern prediction
+- [ ] ML-based pattern prediction with embeddings
 - [ ] Team pattern sharing
+- [ ] Context-aware skill suggestions
 
 ## Privacy
 
