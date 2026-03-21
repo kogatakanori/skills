@@ -1,14 +1,21 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "enabledPlugins": {
-    "document-skills@anthropic-agent-skills": true,
-    "example-skills@anthropic-agent-skills": true
+    "example-skills@anthropic-agent-skills": true,
+    "pattern-detector@kogatakanori-skills": true,
+    "reviewing-skill@kogatakanori-skills": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
       "source": {
         "source": "github",
         "repo": "anthropics/skills"
+      }
+    },
+    "kogatakanori-skills": {
+      "source": {
+        "source": "github",
+        "repo": "kogatakanori/skills"
       }
     }
   },

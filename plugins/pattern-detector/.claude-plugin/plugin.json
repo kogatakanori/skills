@@ -1,0 +1,10 @@
+{
+  "name": "pattern-detector",
+  "description": "Automatically detect repetitive tasks in your workflow and suggest creating skills or hooks to automate them",
+  "version": "0.1.0",
+  "author": {
+    "name": "Takanori Koga"
+  },
+  "homepage": "https://github.com/kogatakanori/skills/pluginspattern-detector",
+  "license": "MIT"
+}

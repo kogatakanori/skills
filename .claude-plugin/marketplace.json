@@ -1,0 +1,24 @@
+{
+  "name": "kogatakanori-skills",
+  "owner": {
+    "name": "Takanori Koga"
+  },
+  "metadata": {
+    "description": "Personal skill collection",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "reviewing-skill",
+      "description": "Reviews Agent Skills for compliance with Anthropic's official best practices",
+      "source": "./skills/reviewing-skill",
+      "strict": false
+    },
+    {
+      "name": "pattern-detector",
+      "description": "Detect repetitive tasks and suggest automation with skills or hooks",
+      "source": "./plugins/pattern-detector",
+      "strict": false
+    }
+  ]
+}

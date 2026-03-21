@@ -1,0 +1,104 @@
+{
+  "excluded_patterns": [
+    {
+      "type": "command",
+      "pattern": "ls",
+      "reason": "Basic directory listing - too common to automate"
+    },
+    {
+      "type": "command",
+      "pattern": "cd",
+      "reason": "Navigation command - not suitable for automation"
+    },
+    {
+      "type": "command",
+      "pattern": "pwd",
+      "reason": "Print working directory - read-only informational command"
+    },
+    {
+      "type": "command",
+      "pattern": "git status",
+      "reason": "Status check - common and harmless"
+    },
+    {
+      "type": "command",
+      "pattern": "git log",
+      "reason": "History viewing - read-only"
+    },
+    {
+      "type": "command",
+      "pattern": "git diff",
+      "reason": "Diff viewing - read-only"
+    },
+    {
+      "type": "command",
+      "pattern": "cat",
+      "reason": "File reading - too generic"
+    },
+    {
+      "type": "command",
+      "pattern": "head",
+      "reason": "File reading - too generic"
+    },
+    {
+      "type": "command",
+      "pattern": "tail",
+      "reason": "File reading - too generic"
+    },
+    {
+      "type": "command",
+      "pattern": "less",
+      "reason": "File viewing - interactive"
+    },
+    {
+      "type": "command",
+      "pattern": "more",
+      "reason": "File viewing - interactive"
+    },
+    {
+      "type": "command",
+      "pattern": "man",
+      "reason": "Manual page viewing - informational"
+    },
+    {
+      "type": "command",
+      "pattern": "help",
+      "reason": "Help command - informational"
+    },
+    {
+      "type": "command",
+      "pattern": "--help",
+      "reason": "Help flag - informational"
+    },
+    {
+      "type": "command",
+      "pattern": "-h",
+      "reason": "Help flag - informational"
+    },
+    {
+      "type": "command",
+      "pattern": "which",
+      "reason": "Command location - informational"
+    },
+    {
+      "type": "command",
+      "pattern": "whereis",
+      "reason": "Command location - informational"
+    },
+    {
+      "type": "command",
+      "pattern": "echo",
+      "reason": "Print command - too generic"
+    },
+    {
+      "type": "command",
+      "pattern": "clear",
+      "reason": "Screen clear - UI command"
+    },
+    {
+      "type": "command",
+      "pattern": "exit",
+      "reason": "Session exit - not automatable"
+    }
+  ]
+}
