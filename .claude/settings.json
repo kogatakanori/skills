@@ -1,9 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "respectGitignore": true,
+  "attribution": {
+    "commit": "🤖 Generated with Claude Code",
+    "pr": "🤖 Generated with Claude Code"
+  },
   "enabledPlugins": {
     "example-skills@anthropic-agent-skills": true,
-    "pattern-detector@kogatakanori-skills": true,
-    "reviewing-skill@kogatakanori-skills": true
+    "reviewing-skill@kogatakanori-skills": true,
+    "pattern-detector@kogatakanori-skills": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
@@ -19,10 +24,5 @@
       }
     }
   },
-  "attribution": {
-    "commit": "🤖 Generated with Claude Code",
-    "pr": "🤖 Generated with Claude Code"
-  },
-  "language": "japanese",
-  "respectGitignore": true
+  "language": "japanese"
 }
