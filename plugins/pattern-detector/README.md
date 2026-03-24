@@ -56,7 +56,7 @@ claude --plugin-dir /path/to/pattern-detector
 Run pattern detection on your conversation history:
 
 ```bash
-/pattern:analyze
+/pattern-detector-analyze
 ```
 
 This will:
@@ -71,7 +71,7 @@ This will:
 See detailed automation suggestions:
 
 ```bash
-/pattern:suggest
+/pattern-detector-suggest
 ```
 
 For each pattern, you'll see:
@@ -102,19 +102,19 @@ python scripts/pattern_detector.py reject 2
 Adjust sensitivity and exclusions:
 
 ```bash
-/pattern:configure
+/pattern-detector-configure
 ```
 
 ## Commands
 
-### `/pattern:analyze`
+### `/pattern-detector-analyze`
 
 Analyze conversation history to detect repetitive patterns.
 
 **Example:**
 
 ```bash
-/pattern:analyze
+/pattern-detector-analyze
 ```
 
 **Output:**
@@ -151,7 +151,7 @@ Found 2 repeated prompts
    ...
 ```
 
-### `/pattern:suggest`
+### `/pattern-detector-suggest`
 
 Show automation suggestions for detected patterns.
 
@@ -164,7 +164,7 @@ Show automation suggestions for detected patterns.
 **Example:**
 
 ```bash
-/pattern:suggest --min-savings 30
+/pattern-detector-suggest --min-savings 30
 ```
 
 ### Accept/Reject Patterns
@@ -209,7 +209,7 @@ This will:
 - Mark the pattern as "rejected"
 - Prevent it from appearing in future suggestions
 
-### `/pattern:configure`
+### `/pattern-detector-configure`
 
 Configure pattern detection settings.
 
@@ -310,12 +310,12 @@ pattern-detector/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata
 ├── skills/
-│   ├── analyze/
-│   │   └── SKILL.md            # /pattern:analyze command
-│   ├── suggest/
-│   │   └── SKILL.md            # /pattern:suggest command
-│   └── configure/
-│       └── SKILL.md            # /pattern:configure command
+│   ├── pattern-detector-analyze/
+│   │   └── SKILL.md            # /pattern-detector-analyze command
+│   ├── pattern-detector-suggest/
+│   │   └── SKILL.md            # /pattern-detector-suggest command
+│   └── pattern-detector-configure/
+│       └── SKILL.md            # /pattern-detector-configure command
 ├── scripts/
 │   ├── history_reader.py       # Parse history.jsonl
 │   ├── pattern_detector.py     # Main detection engine

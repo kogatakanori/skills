@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate skill and hook definitions from detected patterns."""
 
+import re
 from pathlib import Path
 from typing import Dict
 
@@ -9,6 +10,13 @@ from constants import STOP_WORDS
 
 class SkillGenerator:
     """Generates skills and hooks from detected patterns."""
+
+    # Constants
+    DESTRUCTIVE_KEYWORDS = ['commit', 'push', 'deploy', 'delete', 'rm', 'drop']
+    MAX_SKILL_NAME_PARTS = 3
+    MAX_SKILL_NAME_LENGTH = 64
+    MAX_DESCRIPTION_LENGTH = 100
+    MAX_EXAMPLES_TO_SHOW = 3
 
     def suggest_automation(self, pattern: Dict) -> Dict:
         """
@@ -45,7 +53,7 @@ class SkillGenerator:
 
         is_destructive = any(
             keyword in command.lower()
-            for keyword in ['commit', 'push', 'deploy', 'delete', 'rm', 'drop']
+            for keyword in self.DESTRUCTIVE_KEYWORDS
         )
 
         if is_destructive:
@@ -146,7 +154,9 @@ Run each step in sequence, stopping if any step fails.
         skill_name = self._generate_skill_name_from_prompt(prompt_text)
 
         # Create a concise description
-        description = prompt_text[:100] + ('...' if len(prompt_text) > 100 else '')
+        description = prompt_text[:self.MAX_DESCRIPTION_LENGTH] + (
+            '...' if len(prompt_text) > self.MAX_DESCRIPTION_LENGTH else ''
+        )
 
         preview = f"""---
 name: {skill_name}
@@ -174,7 +184,7 @@ user_invocable: true
 """
 
         # Add examples
-        for i, example in enumerate(examples[:3], 1):
+        for i, example in enumerate(examples[:self.MAX_EXAMPLES_TO_SHOW], 1):
             preview += f"{i}. {example}\n"
 
         preview += """
@@ -191,6 +201,31 @@ user_invocable: true
             'skill_name': skill_name
         }
 
+    def _sanitize_skill_name(self, name: str) -> str:
+        """
+        Sanitize a skill name to kebab-case.
+
+        Args:
+            name: Raw skill name
+
+        Returns:
+            Sanitized skill name (kebab-case)
+        """
+        # Convert to lowercase and replace non-alphanumeric chars with hyphens
+        name = re.sub(r'[^a-z0-9-]', '-', name.lower())
+
+        # Remove consecutive hyphens
+        name = re.sub(r'-+', '-', name)
+
+        # Trim hyphens from edges
+        name = name.strip('-')
+
+        # Limit length
+        if len(name) > self.MAX_SKILL_NAME_LENGTH:
+            name = name[:self.MAX_SKILL_NAME_LENGTH].rstrip('-')
+
+        return name
+
     def _generate_skill_name_from_prompt(self, prompt: str) -> str:
         """
         Generate a skill name from a prompt.
@@ -201,31 +236,20 @@ user_invocable: true
         Returns:
             Skill name (kebab-case)
         """
-        import re
-
         # Extract key words from prompt (first few meaningful words)
         words = re.findall(r'\b\w+\b', prompt.lower())
 
         # Filter out common words
         meaningful_words = [w for w in words if w not in STOP_WORDS and len(w) > 2]
 
-        # Take first 3 meaningful words
-        skill_parts = meaningful_words[:3]
+        # Take first N meaningful words
+        skill_parts = meaningful_words[:self.MAX_SKILL_NAME_PARTS]
 
         if not skill_parts:
             skill_parts = ['auto', 'task']
 
-        # Convert to kebab-case
-        skill_name = '-'.join(skill_parts)
-
-        # Sanitize
-        skill_name = re.sub(r'[^a-z0-9-]', '-', skill_name)
-        skill_name = re.sub(r'-+', '-', skill_name)
-        skill_name = skill_name.strip('-')
-
-        # Limit length
-        if len(skill_name) > 64:
-            skill_name = skill_name[:64].rstrip('-')
+        # Join and sanitize
+        skill_name = self._sanitize_skill_name('-'.join(skill_parts))
 
         return skill_name or 'auto-prompt'
 
@@ -252,28 +276,11 @@ user_invocable: true
 
         # Add significant arguments (skip flags)
         for part in parts[1:]:
-            if not part.startswith('-') and len(skill_parts) < 3:
+            if not part.startswith('-') and len(skill_parts) < self.MAX_SKILL_NAME_PARTS:
                 skill_parts.append(part.strip('"\''))
 
-        # Convert to kebab-case
-        skill_name = '-'.join(skill_parts).lower()
-
-        # Sanitize (only lowercase, numbers, hyphens)
-        skill_name = ''.join(
-            c if c.isalnum() or c == '-' else '-'
-            for c in skill_name
-        )
-
-        # Remove consecutive hyphens
-        while '--' in skill_name:
-            skill_name = skill_name.replace('--', '-')
-
-        # Trim hyphens from start/end
-        skill_name = skill_name.strip('-')
-
-        # Limit length
-        if len(skill_name) > 64:
-            skill_name = skill_name[:64].rstrip('-')
+        # Join and sanitize
+        skill_name = self._sanitize_skill_name('-'.join(skill_parts))
 
         return skill_name or 'auto-command'
 

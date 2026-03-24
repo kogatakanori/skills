@@ -11,6 +11,10 @@ from constants import STOP_WORDS
 class PromptSimilarity:
     """Detects similar prompts using various text similarity algorithms."""
 
+    # Similarity calculation weights
+    KEYWORD_WEIGHT = 0.6  # 60% weight for keyword similarity
+    SEQUENCE_WEIGHT = 0.4  # 40% weight for sequence similarity
+
     def __init__(self, similarity_threshold: float = 0.7):
         """
         Initialize prompt similarity detector.
@@ -109,25 +113,12 @@ class PromptSimilarity:
         norm1 = self.normalize_prompt(prompt1)
         norm2 = self.normalize_prompt(prompt2)
 
-        # If prompts are identical after normalization
-        if norm1 == norm2:
-            return 1.0
-
         # Extract keywords
         keywords1 = self.extract_keywords(norm1)
         keywords2 = self.extract_keywords(norm2)
 
-        # Calculate keyword similarity (Jaccard)
-        keyword_sim = self.jaccard_similarity(keywords1, keywords2)
-
-        # Calculate sequence similarity
-        sequence_sim = self.sequence_similarity(norm1, norm2)
-
-        # Weighted average (keyword similarity is more important for semantic meaning)
-        # 60% keyword similarity, 40% sequence similarity
-        overall_sim = (keyword_sim * 0.6) + (sequence_sim * 0.4)
-
-        return overall_sim
+        # Use cached calculation method
+        return self._calculate_similarity_cached(norm1, norm2, keywords1, keywords2)
 
     def is_similar(self, prompt1: str, prompt2: str) -> bool:
         """
@@ -231,8 +222,7 @@ class PromptSimilarity:
         sequence_sim = self.sequence_similarity(norm1, norm2)
 
         # Weighted average (keyword similarity is more important for semantic meaning)
-        # 60% keyword similarity, 40% sequence similarity
-        overall_sim = (keyword_sim * 0.6) + (sequence_sim * 0.4)
+        overall_sim = (keyword_sim * self.KEYWORD_WEIGHT) + (sequence_sim * self.SEQUENCE_WEIGHT)
 
         return overall_sim
 

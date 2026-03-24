@@ -1,5 +1,5 @@
 ---
-name: configure
+name: pattern-detector-configure
 description: Configure pattern detection settings including sensitivity, exclusions, and notification preferences
 user-invocable: true
 ---
@@ -69,7 +69,7 @@ Enable or disable automatic suggestions:
 # Enable automatic suggestions during your workflow
 python ${CLAUDE_SKILL_DIR}/../../scripts/pattern_detector.py config set auto-suggest true
 
-# Disable (manual analysis only with /pattern:analyze)
+# Disable (manual analysis only with /pattern-detector-analyze)
 python ${CLAUDE_SKILL_DIR}/../../scripts/pattern_detector.py config set auto-suggest false
 ```
 

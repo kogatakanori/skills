@@ -1,5 +1,5 @@
 ---
-name: analyze
+name: pattern-detector-analyze
 description: Analyze conversation history to detect repetitive task patterns and suggest automation opportunities
 user-invocable: true
 ---
@@ -43,5 +43,5 @@ For each pattern, you'll see:
 ## Next Steps
 
 After reviewing the analysis:
-1. Use `/pattern:suggest` to see detailed suggestions for creating skills/hooks
-2. Use `/pattern:configure` to adjust detection sensitivity and exclusions
+1. Use `/pattern-detector-suggest` to see detailed suggestions for creating skills/hooks
+2. Use `/pattern-detector-configure` to adjust detection sensitivity and exclusions

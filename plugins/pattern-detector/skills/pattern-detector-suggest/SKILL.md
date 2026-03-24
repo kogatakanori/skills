@@ -1,5 +1,5 @@
 ---
-name: suggest
+name: pattern-detector-suggest
 description: Show detailed suggestions for automating detected patterns with skills or hooks
 user-invocable: true
 ---

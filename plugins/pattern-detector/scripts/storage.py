@@ -25,7 +25,7 @@ class PatternStorage:
         self.exclusions_file = self.storage_dir / 'exclusions.json'
 
         # Create storage directory if it doesn't exist
-        self.storage_dir.mkdir(exist_ok=True)
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize config if it doesn't exist
         if not self.config_file.exists():
@@ -80,8 +80,7 @@ class PatternStorage:
         if not self.patterns_file.exists():
             return []
 
-        patterns = []
-        seen_ids = set()
+        patterns_dict = {}
 
         # Read all patterns (JSONL format)
         with open(self.patterns_file, 'r', encoding='utf-8') as f:
@@ -94,12 +93,13 @@ class PatternStorage:
                     pattern = json.loads(line)
                     pattern_id = pattern.get('id')
 
-                    # Keep only the latest version of each pattern
-                    if pattern_id and pattern_id not in seen_ids:
-                        patterns.append(pattern)
-                        seen_ids.add(pattern_id)
+                    # Keep only the latest version of each pattern (overwrites previous)
+                    if pattern_id:
+                        patterns_dict[pattern_id] = pattern
                 except json.JSONDecodeError:
                     continue
+
+        patterns = list(patterns_dict.values())
 
         # Filter by status if specified
         if status:
@@ -156,8 +156,14 @@ class PatternStorage:
                 return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             # Return default config if file is corrupted
-            self._init_default_config()
-            return self.load_config()
+            return {
+                "enabled": True,
+                "detection_sensitivity": "medium",
+                "min_frequency": 3,
+                "auto_suggest": False,
+                "suggestion_threshold": 5,
+                "excluded_patterns": []
+            }
 
     def update_config(self, key: str, value) -> Dict:
         """

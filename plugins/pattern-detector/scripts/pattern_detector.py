@@ -38,9 +38,27 @@ class PatternDetector:
         self.skill_generator = SkillGenerator()
         self.prompt_similarity = PromptSimilarity(similarity_threshold=0.7)
 
+    def _get_exclusions_by_type(self, exclusion_type: str) -> set:
+        """
+        Get exclusion patterns by type.
+
+        Args:
+            exclusion_type: Type of exclusions to retrieve (command, prompt, etc.)
+
+        Returns:
+            Set of exclusion patterns
+        """
+        config = self.storage.load_config()
+        return {
+            exc['pattern']
+            for exc in config.get('excluded_patterns', [])
+            if exc['type'] == exclusion_type
+        }
+
     def detect_command_patterns(
         self,
         min_frequency: int = 3,
+        recent_entries: List[Dict] = None,
         window_size: int = 100
     ) -> List[Dict]:
         """
@@ -48,13 +66,15 @@ class PatternDetector:
 
         Args:
             min_frequency: Minimum occurrences to consider a pattern
-            window_size: Number of recent entries to analyze
+            recent_entries: Pre-loaded history entries (optional, improves performance)
+            window_size: Number of recent entries to analyze (ignored if recent_entries provided)
 
         Returns:
             List of detected command patterns
         """
         # Get recent history
-        recent_entries = self.history_reader.read_recent(window_size)
+        if recent_entries is None:
+            recent_entries = self.history_reader.read_recent(window_size)
 
         # Extract bash commands
         commands = self.history_reader.extract_bash_commands(recent_entries)
@@ -63,12 +83,7 @@ class PatternDetector:
         command_counts = Counter(cmd['command'] for cmd in commands)
 
         # Load exclusions
-        config = self.storage.load_config()
-        exclusions = {
-            exc['pattern']
-            for exc in config.get('excluded_patterns', [])
-            if exc['type'] == 'command'
-        }
+        exclusions = self._get_exclusions_by_type('command')
 
         # Find patterns meeting threshold
         patterns = []
@@ -109,6 +124,7 @@ class PatternDetector:
         self,
         min_length: int = 2,
         min_frequency: int = 2,
+        recent_entries: List[Dict] = None,
         window_size: int = 100
     ) -> List[Dict]:
         """
@@ -117,13 +133,15 @@ class PatternDetector:
         Args:
             min_length: Minimum sequence length
             min_frequency: Minimum occurrences
-            window_size: Number of recent entries to analyze
+            recent_entries: Pre-loaded history entries (optional, improves performance)
+            window_size: Number of recent entries to analyze (ignored if recent_entries provided)
 
         Returns:
             List of detected sequence patterns
         """
         # Get recent history
-        recent_entries = self.history_reader.read_recent(window_size)
+        if recent_entries is None:
+            recent_entries = self.history_reader.read_recent(window_size)
         commands = self.history_reader.extract_bash_commands(recent_entries)
 
         if len(commands) < min_length:
@@ -163,6 +181,7 @@ class PatternDetector:
     def detect_prompt_patterns(
         self,
         min_frequency: int = 3,
+        recent_entries: List[Dict] = None,
         window_size: int = 200
     ) -> List[Dict]:
         """
@@ -170,13 +189,15 @@ class PatternDetector:
 
         Args:
             min_frequency: Minimum occurrences to consider a pattern
-            window_size: Number of recent entries to analyze
+            recent_entries: Pre-loaded history entries (optional, improves performance)
+            window_size: Number of recent entries to analyze (ignored if recent_entries provided)
 
         Returns:
             List of detected prompt patterns
         """
         # Get recent history
-        recent_entries = self.history_reader.read_recent(window_size)
+        if recent_entries is None:
+            recent_entries = self.history_reader.read_recent(window_size)
 
         # Extract user prompts
         prompts = self.history_reader.extract_user_prompts(recent_entries)
@@ -194,12 +215,7 @@ class PatternDetector:
         )
 
         # Load exclusions
-        config = self.storage.load_config()
-        exclusions = {
-            exc['pattern']
-            for exc in config.get('excluded_patterns', [])
-            if exc['type'] == 'prompt'
-        }
+        exclusions = self._get_exclusions_by_type('prompt')
 
         # Build pattern list
         patterns = []
@@ -250,14 +266,26 @@ class PatternDetector:
 
         print("🔍 Analyzing conversation history...\n")
 
+        # Load history once for all detections (performance optimization)
+        recent_entries = self.history_reader.read_recent(200)
+
         # Detect command patterns
-        command_patterns = self.detect_command_patterns(min_frequency=min_frequency)
+        command_patterns = self.detect_command_patterns(
+            min_frequency=min_frequency,
+            recent_entries=recent_entries
+        )
 
         # Detect sequence patterns
-        sequence_patterns = self.detect_sequence_patterns(min_frequency=min_frequency)
+        sequence_patterns = self.detect_sequence_patterns(
+            min_frequency=min_frequency,
+            recent_entries=recent_entries
+        )
 
         # Detect prompt patterns
-        prompt_patterns = self.detect_prompt_patterns(min_frequency=min_frequency)
+        prompt_patterns = self.detect_prompt_patterns(
+            min_frequency=min_frequency,
+            recent_entries=recent_entries
+        )
 
         # Display results
         print(f"=== Command Patterns ===")
