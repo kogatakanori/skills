@@ -6,7 +6,7 @@ import sys
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 # Add scripts directory to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -19,6 +19,11 @@ from prompt_similarity import PromptSimilarity
 
 class PatternDetector:
     """Detects repetitive patterns in Claude Code conversation history."""
+
+    # Pattern status constants
+    STATUS_PENDING = 'pending'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_REJECTED = 'rejected'
 
     def __init__(self, project_dir: Path = None):
         """
@@ -320,7 +325,8 @@ class PatternDetector:
             pattern_type: Filter by type (skill or hook)
             min_savings: Minimum time savings in seconds
         """
-        patterns = self.storage.load_patterns()
+        # Load only pending patterns (not accepted or rejected)
+        patterns = self.storage.load_patterns(status=self.STATUS_PENDING)
 
         if pattern_type:
             patterns = [p for p in patterns if p.get('suggested_type') == pattern_type]
@@ -333,7 +339,7 @@ class PatternDetector:
 
         if not patterns:
             print("No automation suggestions found.")
-            print("Run /pattern:analyze first to detect patterns.")
+            print("Run /pattern-detector:analyze first to detect patterns.")
             return
 
         print(f"=== Automation Suggestions ({len(patterns)}) ===\n")
@@ -357,8 +363,9 @@ class PatternDetector:
             print()
 
         print("Actions available:")
-        print("  python scripts/pattern_detector.py accept <pattern-id>")
-        print("  python scripts/pattern_detector.py reject <pattern-id>")
+        print("  Accept:  python scripts/pattern_detector.py accept <pattern-id>")
+        print("  Reject:  python scripts/pattern_detector.py reject <pattern-id>")
+        print("\nExample: python scripts/pattern_detector.py accept 1")
 
     def config_show(self):
         """Show current configuration."""
@@ -407,6 +414,108 @@ class PatternDetector:
         self.storage.reset_config()
         print("✓ Configuration reset to defaults")
 
+    def _validate_and_get_pattern(self, pattern_id: int) -> Optional[Dict]:
+        """
+        Validate pattern ID and return the pattern.
+
+        Args:
+            pattern_id: Pattern ID (1-based index)
+
+        Returns:
+            Pattern dict if valid, None otherwise
+        """
+        patterns = self.storage.load_patterns()
+
+        if not patterns:
+            print("✗ No patterns found. Run /pattern-detector:analyze first.")
+            return None
+
+        if pattern_id < 1 or pattern_id > len(patterns):
+            print(f"✗ Invalid pattern ID. Must be between 1 and {len(patterns)}.")
+            return None
+
+        return patterns[pattern_id - 1]
+
+    def _add_pattern_to_exclusions(self, pattern: Dict):
+        """
+        Add pattern to exclusions based on its type.
+
+        Args:
+            pattern: Pattern to exclude
+        """
+        pattern_type = pattern.get('type')
+        pattern_text = pattern.get('pattern')
+
+        if pattern_type == 'command':
+            self.storage.add_exclusion('command', pattern_text)
+        elif pattern_type == 'prompt':
+            self.storage.add_exclusion('prompt', pattern_text)
+        elif pattern_type == 'sequence':
+            # For sequences, exclude the first command
+            first_cmd = pattern_text[0] if pattern_text else ''
+            self.storage.add_exclusion('command', first_cmd)
+
+    def accept(self, pattern_id: int):
+        """
+        Accept a pattern suggestion and generate a skill.
+
+        Args:
+            pattern_id: ID of the pattern to accept (1-based index)
+        """
+        pattern = self._validate_and_get_pattern(pattern_id)
+        if not pattern:
+            return
+
+        # Generate suggestion
+        suggestion = self.skill_generator.suggest_automation(pattern)
+
+        if suggestion['type'] != 'skill':
+            print(f"✗ This pattern is suggested as a {suggestion['type']}, not a skill.")
+            print("Manual configuration required:")
+            print(suggestion['preview'])
+            return
+
+        # Determine output directory
+        skills_dir = self.project_dir / '.claude' / 'skills'
+        skills_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate skill file
+        try:
+            skill_file = self.skill_generator.generate_skill_file(pattern, skills_dir)
+
+            # Update pattern status to accepted
+            pattern['status'] = self.STATUS_ACCEPTED
+            pattern['skill_file'] = str(skill_file)
+            self.storage.save_pattern(pattern)
+
+            print(f"✓ Generated skill: {skill_file}")
+            print(f"  Skill name: {suggestion['skill_name']}")
+            print(f"  Location: {skill_file.relative_to(self.project_dir)}")
+            print(f"\nYou can now use: /{suggestion['skill_name']}")
+        except Exception as e:
+            print(f"✗ Failed to generate skill: {e}")
+
+    def reject(self, pattern_id: int):
+        """
+        Reject a pattern suggestion.
+
+        Args:
+            pattern_id: ID of the pattern to reject (1-based index)
+        """
+        pattern = self._validate_and_get_pattern(pattern_id)
+        if not pattern:
+            return
+
+        # Add to exclusions
+        self._add_pattern_to_exclusions(pattern)
+
+        # Update pattern status to rejected
+        pattern['status'] = self.STATUS_REJECTED
+        self.storage.save_pattern(pattern)
+
+        print(f"✓ Rejected pattern #{pattern_id}")
+        print(f"  Pattern has been excluded from future detections.")
+
 
 def main():
     """CLI entry point."""
@@ -454,6 +563,16 @@ def main():
     # Config reset
     parser_config_reset = config_subparsers.add_parser('reset', help='Reset configuration to defaults')
     parser_config_reset.set_defaults(func=lambda args: PatternDetector().config_reset())
+
+    # Accept command
+    parser_accept = subparsers.add_parser('accept', help='Accept a pattern suggestion and generate skill')
+    parser_accept.add_argument('pattern_id', type=int, help='Pattern ID to accept (from suggest output)')
+    parser_accept.set_defaults(func=lambda args: PatternDetector().accept(args.pattern_id))
+
+    # Reject command
+    parser_reject = subparsers.add_parser('reject', help='Reject a pattern suggestion')
+    parser_reject.add_argument('pattern_id', type=int, help='Pattern ID to reject (from suggest output)')
+    parser_reject.set_defaults(func=lambda args: PatternDetector().reject(args.pattern_id))
 
     # Parse arguments
     args = parser.parse_args()

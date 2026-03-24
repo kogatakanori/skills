@@ -81,7 +81,23 @@ For each pattern, you'll see:
 - Suggested automation approach (skill vs hook)
 - Preview of generated SKILL.md or hook config
 
-### 3. Configure Detection
+### 3. Accept or Reject Patterns
+
+For patterns suggested as skills, you can:
+
+**Accept** - Generate the skill automatically:
+
+```bash
+python scripts/pattern_detector.py accept 1
+```
+
+**Reject** - Exclude from future suggestions:
+
+```bash
+python scripts/pattern_detector.py reject 2
+```
+
+### 4. Configure Detection
 
 Adjust sensitivity and exclusions:
 
@@ -150,6 +166,48 @@ Show automation suggestions for detected patterns.
 ```bash
 /pattern:suggest --min-savings 30
 ```
+
+### Accept/Reject Patterns
+
+After reviewing suggestions, you can accept or reject patterns:
+
+#### Accept a Pattern
+
+Generate a skill automatically in `.claude/skills/`:
+
+```bash
+python scripts/pattern_detector.py accept <pattern-id>
+```
+
+**Example:**
+
+```bash
+python scripts/pattern_detector.py accept 1
+```
+
+This will:
+- Create a new skill in `.claude/skills/{skill-name}/SKILL.md`
+- Mark the pattern as "accepted"
+- Make the skill available for immediate use
+
+#### Reject a Pattern
+
+Mark a pattern as not worth automating and exclude it from future detections:
+
+```bash
+python scripts/pattern_detector.py reject <pattern-id>
+```
+
+**Example:**
+
+```bash
+python scripts/pattern_detector.py reject 2
+```
+
+This will:
+- Add the pattern to your exclusion list
+- Mark the pattern as "rejected"
+- Prevent it from appearing in future suggestions
 
 ### `/pattern:configure`
 
