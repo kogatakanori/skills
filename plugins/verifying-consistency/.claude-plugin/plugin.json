@@ -1,0 +1,10 @@
+{
+  "name": "verifying-consistency",
+  "description": "Verifies consistency of changed files - checks documents for contradictions, duplications, gaps, and alignment between documentation and implementation code",
+  "version": "0.1.0",
+  "author": {
+    "name": "Takanori Koga"
+  },
+  "homepage": "https://github.com/kogatakanori/skills/tree/main/plugins/verifying-consistency",
+  "license": "MIT"
+}

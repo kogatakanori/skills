@@ -1,0 +1,10 @@
+{
+  "name": "reviewing-skill",
+  "description": "Reviews Agent Skills for compliance with Anthropic's official best practices",
+  "version": "0.1.0",
+  "author": {
+    "name": "Takanori Koga"
+  },
+  "homepage": "https://github.com/kogatakanori/skills/tree/main/plugins/reviewing-skill",
+  "license": "MIT"
+}

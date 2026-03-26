@@ -11,7 +11,7 @@
     {
       "name": "reviewing-skill",
       "description": "Reviews Agent Skills for compliance with Anthropic's official best practices",
-      "source": "./skills/reviewing-skill",
+      "source": "./plugins/reviewing-skill",
       "strict": false
     },
     {
@@ -23,7 +23,7 @@
     {
       "name": "verifying-consistency",
       "description": "Verifies consistency of changed files - checks documents for contradictions, duplications, gaps, and alignment between documentation and implementation code",
-      "source": "./skills/verifying-consistency",
+      "source": "./plugins/verifying-consistency",
       "strict": false
     }
   ]
