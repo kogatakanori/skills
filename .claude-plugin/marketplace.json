@@ -19,6 +19,12 @@
       "description": "Detect repetitive tasks and suggest automation with skills or hooks",
       "source": "./plugins/pattern-detector",
       "strict": false
+    },
+    {
+      "name": "verification-skill",
+      "description": "Verifies consistency of changed files - checks documents for contradictions, duplications, gaps, and alignment between documentation and implementation code",
+      "source": "./skills/verifying-consistency",
+      "strict": false
     }
   ]
 }
