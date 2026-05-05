@@ -1,0 +1,14 @@
+# Agent Instructions for {{PROJECT_NAME}}
+
+## よく使うコマンド
+
+```bash
+# 開発サーバー起動
+# npm run dev
+
+# テスト実行
+# npm test
+
+# ビルド
+# npm run build
+```

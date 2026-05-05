@@ -25,6 +25,12 @@
       "description": "Verifies consistency of changed files - checks documents for contradictions, duplications, gaps, and alignment between documentation and implementation code",
       "source": "./plugins/verifying-consistency",
       "strict": false
+    },
+    {
+      "name": "project-init",
+      "description": "Initialize a new project with Claude settings, README, AGENT.md, CLAUDE.md, and .gitignore",
+      "source": "./plugins/project-init",
+      "strict": false
     }
   ]
 }

@@ -1,0 +1,10 @@
+{
+  "name": "project-init",
+  "description": "Initialize a new project with Claude settings, README, AGENT.md, CLAUDE.md, and .gitignore",
+  "version": "0.1.0",
+  "author": {
+    "name": "Takanori Koga"
+  },
+  "homepage": "https://github.com/kogatakanori/skills/tree/main/plugins/project-init",
+  "license": "MIT"
+}
