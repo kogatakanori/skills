@@ -1,31 +1,57 @@
-# temp files from editors
-*~
-*.bak
+# temp files
+*.log
+*.cache
+*.tmp
+# hidden files created by Mac
 .DS_Store
-.buildpath
-.project
-.settings
-*.tmproj
-build
-.idea
-nbproject/
 
 # hidden files created by Windows
 Thumbs.db
 desktop.ini
 
-# text editor setting
+# text editor
+## VS code
 *.code-workspace
+## sublime
+*.sublime-project
+*.sublime-workspace
+## Vim
+*~
+*.bak
+*.swp
+## JetBrains
+*.iml
+.idea
+## Eclipse
+.buildpath
+.project
+.settings
+## NetBeans
+nbproject
+## TextMate
+*.tmproj
 
-# setting file
-.env
-credentials.json
+# credentials
+service_account.json
 client_secret.json
+credentials.json
 token.json
+.env
+.env.local
 
 # gem files
 .bundle
-vendor/bundle/
+vendor/bundle
+
+# nodejs
+node_modules
+dist
+build
+out
+coverage
+*.tsbuildinfo
+*.eslintcache
+*.prettiercache
 
 # python
 __pycache__/
@@ -33,20 +59,12 @@ __pycache__/
 *.pyo
 *.pyd
 
-# nodejs
-node_modules
-
-# webpack
-dist
-
 # puppeteer
-screenshot/
-
-# test
-coverage
+screenshot
 
 # claude
 .claude/settings.local.json
 
 
 .pattern-detector
+last_status.json

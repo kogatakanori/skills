@@ -1,6 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "respectGitignore": true,
+  "language": "japanese",
+  "statusLine": {
+    "type": "command",
+    "command": ".claude/statusline.sh"
+  },
   "attribution": {
     "commit": "🤖 Generated with Claude Code",
     "pr": "🤖 Generated with Claude Code"
@@ -25,5 +30,63 @@
       }
     }
   },
-  "language": "japanese"
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Write(.env)",
+      "Read(*.env)",
+      "Write(*.env)",
+      "Read(.env.*)",
+      "Write(.env.*)",
+      "Bash(cat *.env*)",
+      "Bash(grep *.env*)",
+      "Read(~/.ssh)",
+      "Write(~/.ssh)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.pfx)",
+      "Read(**/*.p12)",
+      "Read(**/id_rsa)",
+      "Read(**/id_rsa.pub)",
+      "Read(**/id_ed25519)",
+      "Read(**/id_ed25519.pub)",
+      "Read(**/credentials.json)",
+      "Read(**/secrets.json)",
+      "Read(**/service-account.json)",
+      "Read(**/service_account.json)",
+      "Read(~/.config)",
+      "Write(~/.config)",
+      "Bash(sudo *)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/)",
+      "Bash(rm -rf ~/*)",
+      "Bash(rm -rf *)",
+      "Bash(npm install:*)",
+      "Bash(npm i:*)",
+      "Bash(pnpm install:*)",
+      "Bash(yarn add:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)"
+    ],
+    "ask": [],
+    "allow": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post_write_lint.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1"
+  }
 }
