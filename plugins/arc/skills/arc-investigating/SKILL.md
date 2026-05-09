@@ -23,15 +23,32 @@ SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
 
 ### Step 2: 並列技術調査
 
+#### Phase 2a: ローカル調査（常に実行）
+
 `../../agents/dependency-analyst.md` と `../../agents/conflict-analyst.md` を Read し、`[specの全文]` を実際のspec内容で置換して、2体のExploreエージェントを**同時に**起動する：
 
 **Agent A（dependency-analyst）**: ライブラリ・外部APIの存在・バージョン適合性を確認
 
 **Agent B（conflict-analyst）**: 既存コードとの競合・破壊的変更・パフォーマンス懸念を調査
 
+#### Phase 2b: Web調査クエリの生成
+
+Phase 2a の結果から、以下の条件に該当する項目をリストアップする：
+- dependency-analyst が `UNCERTAIN` または `VERSION_CONFLICT` と判定したライブラリ
+- 外部 API のステータスが `UNCERTAIN` または `UNAVAILABLE` のもの
+- セキュリティアドバイザリの確認を推奨したもの
+
+リストが空（全項目が `CONFIRMED`/`EXISTS`/`FEASIBLE`）の場合は Phase 2c をスキップする。
+
+#### Phase 2c: Web調査（Phase 2b のリストが空でない場合のみ）
+
+`../../agents/web-research-analyst.md` を Read し、`[調査クエリリスト]` を Phase 2b で生成したリスト（ライブラリ名・バージョン・確認したい点を1行ずつ）で置換して、Exploreエージェントを起動する：
+
+**Agent C（web-research-analyst）**: WebSearch/WebFetch でメンテナンス状況・セキュリティ・breaking changes・外部 API 可用性を確認
+
 ### Step 3: 調査結果の統合と評価
 
-両エージェントの結果を統合し、実現性を3段階で評価：
+全エージェントの結果を統合し、実現性を3段階で評価：
 
 **FEASIBLE（実現可能）**: 制約なしで進められる
 
@@ -63,6 +80,9 @@ BODY="$(cat <<'EOF'
 
 ### コード競合・パフォーマンス（Agent B）
 [Agent Bの調査結果サマリー]
+
+### Web調査・外部情報（Agent C）
+[Agent Cの調査結果サマリー / または「スキップ（ローカル調査で十分と判断）」]
 
 ### 結論
 [なぜこの判定か、具体的な理由]
