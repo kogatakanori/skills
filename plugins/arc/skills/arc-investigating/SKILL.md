@@ -46,6 +46,16 @@ Phase 2a の結果から、以下の条件に該当する項目をリストア�
 
 **Agent C（web-research-analyst）**: WebSearch/WebFetch でメンテナンス状況・セキュリティ・breaking changes・外部 API 可用性を確認
 
+#### Phase 2d: 残存する不明項目のユーザー確認（必要な場合のみ）
+
+Phase 2cの後、全エージェントの結果を照合し、依然として`不明`のままの項目がある場合は `AskUserQuestion` でユーザーに確認する（最大2問まで）。
+
+確認例：
+- 「○○ライブラリのv2.xとの互換性がWeb上でも確認できませんでした。プロジェクトで使用中のバージョンを教えてください」
+- 「△△ APIの利用可否が不明です。アクセス権限・契約状況を確認できますか？」
+
+ユーザーの回答を踏まえて該当項目の判定を更新し、Step 3へ進む。
+
 ### Step 3: 調査結果の統合と評価
 
 全エージェントの結果を統合し、実現性を3段階で評価：
@@ -57,7 +67,31 @@ Phase 2a の結果から、以下の条件に該当する項目をリストア�
 
 **実現困難**: 根本的な問題がある
 - 具体的な代替アーキテクチャ案を提示
-- specの修正が必要であることをユーザーに伝える
+- 以下の手順でspecコメントのADRセクションを自動更新する：
+
+  ```bash
+  SPEC_COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
+    --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .id')
+  ```
+
+  取得した `SPEC_COMMENT_ID` を使い、現在のspecコメント本文の `## ADR` セクション末尾に以下を追記してPATCHする：
+
+  ```
+  ### 調査結果フィードバック（YYYY-MM-DD）
+  **判定**: 実現困難
+  **理由**: [実現困難と判断した具体的な根拠]
+
+  **代替案**:
+  - **案A**: [概要・採用すべき理由]
+  - **案B**: [概要・採用すべき理由]
+  ```
+
+  ```bash
+  gh api repos/${REPO}/issues/comments/${SPEC_COMMENT_ID} \
+    -X PATCH -f body="<ADRセクションを更新した全文>"
+  ```
+
+  更新後、**「specのADRセクションに調査結果を反映しました。内容を確認・修正後、`/arc-investigating` を再実行してください」** と案内して終了する（Step 4以降は実行しない）。
 
 ### Step 4: Phaseスコープ評価とIssue作成
 
@@ -154,8 +188,6 @@ git commit -m "spec: update docs with feasibility constraints for issue #NNN"
 ### Step 7: 案内
 
 IssueのURLを表示し、**"調査結果を確認し方向性を決定したら、`/arc-planning` を実行してください"** と案内する。
-
-実現困難の場合は代替案を提示し、specの修正を促す。
 
 ## Notes
 
