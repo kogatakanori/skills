@@ -59,7 +59,37 @@ Phase 2a の結果から、以下の条件に該当する項目をリストア�
 - 具体的な代替アーキテクチャ案を提示
 - specの修正が必要であることをユーザーに伝える
 
-### Step 4: 調査結果をIssueコメントに投稿
+### Step 4: Phaseスコープ評価とIssue作成
+
+SpecのGoalと調査結果を照合し、今回実装するスコープ（Phase 1）と後続フェーズ（Phase 2+）に分類する。
+
+**Phase 2以降への延期基準**（いずれかに該当するGoal・作業を延期対象とする）：
+- `条件付き`と判定されたが、対応工数が大きく今回のスコープに収まらないもの
+- `実現困難`と判定されたGoalで、代替案の実装も複雑なもの
+- Specに含まれているがMVPとして必須でない機能
+- 調査で新たに判明した追加作業・改善点
+
+延期項目がある場合、それぞれについてGitHub Issueを作成する：
+
+```bash
+gh issue create \
+  --title "Phase 2: <延期する機能の概要>" \
+  --body "$(cat <<'EOF'
+## 背景
+#${ISSUE_NUM} のPhase 1実装後に対応する機能。
+
+## 内容
+[延期した理由と具体的な作業内容]
+
+## 前提条件
+- Phase 1 (#${ISSUE_NUM}) の完了
+EOF
+)"
+```
+
+作成したIssue番号とURLを記録し、Step 5のコメントに含める。延期項目がない場合はこのステップをスキップする。
+
+### Step 5: 調査結果をIssueコメントに投稿
 
 既存の `<!-- arc:investigation -->` コメントがある場合は更新し、なければ新規投稿する：
 
@@ -96,6 +126,10 @@ BODY="$(cat <<'EOF'
 - **案B**: [概要と採用すべき理由]
 
 **次のステップ**: Issueのspecコメントを修正し（ADRセクションで上記代替案を検討・採用アプローチを再決定）、再度 `/arc-investigating` を実行してください。
+
+### Phase分け
+**Phase 1（今回）**: [今回実装するGoalの一覧]
+**Phase 2以降**: なし / #NNN [タイトル]（作成したIssueのURL）
 EOF
 )"
 
@@ -106,7 +140,7 @@ else
 fi
 ```
 
-### Step 5: Docsの更新
+### Step 6: Docsの更新
 
 調査で発覚した制約・前提条件を `docs/` ファイルの仕様セクションに反映する（変更がある場合のみ）。
 
@@ -117,7 +151,7 @@ git add docs/
 git commit -m "spec: update docs with feasibility constraints for issue #NNN"
 ```
 
-### Step 6: 案内
+### Step 7: 案内
 
 IssueのURLを表示し、**"調査結果を確認し方向性を決定したら、`/arc-planning` を実行してください"** と案内する。
 
