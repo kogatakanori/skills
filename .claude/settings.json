@@ -1,36 +1,15 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "respectGitignore": true,
-  "language": "japanese",
-  "statusLine": {
-    "type": "command",
-    "command": ".claude/statusline.sh"
+  "env": {
+    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1"
   },
   "attribution": {
     "commit": "🤖 Generated with Claude Code",
     "pr": "🤖 Generated with Claude Code"
   },
-  "enabledPlugins": {
-    "example-skills@anthropic-agent-skills": true,
-    "reviewing-skill@kogatakanori-skills": true,
-    "pattern-detector@kogatakanori-skills": true,
-    "verifying-consistency@kogatakanori-skills": true
-  },
-  "extraKnownMarketplaces": {
-    "anthropic-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/skills"
-      }
-    },
-    "kogatakanori-skills": {
-      "source": {
-        "source": "github",
-        "repo": "kogatakanori/skills"
-      }
-    }
-  },
   "permissions": {
+    "allow": [],
     "deny": [
       "Read(.env)",
       "Write(.env)",
@@ -70,8 +49,7 @@
       "Bash(pip install:*)",
       "Bash(pip3 install:*)"
     ],
-    "ask": [],
-    "allow": []
+    "ask": []
   },
   "hooks": {
     "PostToolUse": [
@@ -86,7 +64,30 @@
       }
     ]
   },
-  "env": {
-    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1"
-  }
+  "statusLine": {
+    "type": "command",
+    "command": ".claude/statusline.sh"
+  },
+  "enabledPlugins": {
+    "example-skills@anthropic-agent-skills": true,
+    "reviewing-skill@kogatakanori-skills": true,
+    "pattern-detector@kogatakanori-skills": true,
+    "verifying-consistency@kogatakanori-skills": true,
+    "context7@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    },
+    "kogatakanori-skills": {
+      "source": {
+        "source": "github",
+        "repo": "kogatakanori/skills"
+      }
+    }
+  },
+  "language": "japanese"
 }

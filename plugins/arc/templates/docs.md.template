@@ -1,0 +1,23 @@
+---
+title: Feature Title
+issue: "#NNN"
+last_updated: YYYY-MM-DD
+---
+
+# Feature Title
+
+## 概要
+
+（この機能が何をするか）
+
+## 使い方
+
+（使用例・コマンド・API呼び出し例）
+
+## 仕様
+
+（現在の動作仕様の詳細）
+
+## ADR
+
+この機能の設計判断・代替案の検討・採用理由は [Issue #NNN](<issue-url>) を参照。

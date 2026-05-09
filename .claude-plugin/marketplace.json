@@ -31,6 +31,12 @@
       "description": "Initialize a new project with Claude settings, README, AGENT.md, CLAUDE.md, and .gitignore",
       "source": "./plugins/project-init",
       "strict": false
+    },
+    {
+      "name": "arc",
+      "description": "Arc: AI-driven SDLC workflow from GitHub Issue to PR. Autonomously specifies, investigates feasibility, plans tasks with TDD, implements with specialist review agents, and creates PRs.",
+      "source": "./plugins/arc",
+      "strict": false
     }
   ]
 }
