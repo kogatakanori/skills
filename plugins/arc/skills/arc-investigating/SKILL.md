@@ -34,11 +34,11 @@ SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
 #### Phase 2b: Web調査クエリの生成
 
 Phase 2a の結果から、以下の条件に該当する項目をリストアップする：
-- dependency-analyst が `UNCERTAIN` または `VERSION_CONFLICT` と判定したライブラリ
-- 外部 API のステータスが `UNCERTAIN` または `UNAVAILABLE` のもの
+- dependency-analyst が `不明` または `バージョン競合` と判定したライブラリ
+- 外部 API のステータスが `不明` または `利用不可` のもの
 - セキュリティアドバイザリの確認を推奨したもの
 
-リストが空（全項目が `CONFIRMED`/`EXISTS`/`FEASIBLE`）の場合は Phase 2c をスキップする。
+リストが空（全項目が `利用可能`/`確認済み`/`実現可能`）の場合は Phase 2c をスキップする。
 
 #### Phase 2c: Web調査（Phase 2b のリストが空でない場合のみ）
 
@@ -50,12 +50,12 @@ Phase 2a の結果から、以下の条件に該当する項目をリストア�
 
 全エージェントの結果を統合し、実現性を3段階で評価：
 
-**FEASIBLE（実現可能）**: 制約なしで進められる
+**実現可能**: 制約なしで進められる
 
-**CONDITIONAL（条件付き実現可能）**: 特定の制約や追加作業があるが実現できる
+**条件付き**: 特定の制約や追加作業があるが実現できる
 - 何の対応が必要かを明示
 
-**INFEASIBLE（実現困難）**: 根本的な問題がある
+**実現困難**: 根本的な問題がある
 - 具体的な代替アーキテクチャ案を提示
 - specの修正が必要であることをユーザーに伝える
 
@@ -72,7 +72,7 @@ BODY="$(cat <<'EOF'
 <!-- arc:investigation -->
 ## Feasibility Investigation
 
-**判定**: FEASIBLE / CONDITIONAL / INFEASIBLE
+**判定**: 実現可能 / 条件付き / 実現困難
 **調査日**: YYYY-MM-DD
 
 ### 依存関係・統合（Agent A）
@@ -87,11 +87,11 @@ BODY="$(cat <<'EOF'
 ### 結論
 [なぜこの判定か、具体的な理由]
 
-### 対応が必要な事項（CONDITIONALの場合）
+### 対応が必要な事項（条件付きの場合）
 - [ ] 対応事項1
 - [ ] 対応事項2
 
-### 代替案（INFEASIBLEの場合）
+### 代替案（実現困難の場合）
 - **案A**: [概要と採用すべき理由]
 - **案B**: [概要と採用すべき理由]
 
@@ -121,7 +121,7 @@ git commit -m "spec: update docs with feasibility constraints for issue #NNN"
 
 IssueのURLを表示し、**"調査結果を確認し方向性を決定したら、`/arc-planning` を実行してください"** と案内する。
 
-INFEASIBLEの場合は代替案を提示し、specの修正を促す。
+実現困難の場合は代替案を提示し、specの修正を促す。
 
 ## Notes
 

@@ -83,9 +83,9 @@ Issueのspecコメントを読み取り技術的実現性を調査し、調査�
 - IssueコメントからspecをAPIで取得
 - **dependency-analyst** と **conflict-analyst** を並列起動
 - 実現性を3段階で判定：
-  - `FEASIBLE` — 制約なし、そのまま進める
-  - `CONDITIONAL` — 特定の対応が必要だが実現できる
-  - `INFEASIBLE` — 根本的な問題あり、代替案を提示してspecコメントの修正を促す
+  - `実現可能` — 制約なし、そのまま進める
+  - `条件付き` — 特定の対応が必要だが実現できる
+  - `実現困難` — 根本的な問題あり、代替案を提示してspecコメントの修正を促す
 - 調査結果を `<!-- arc:investigation -->` 識別子付きでIssueコメントとして投稿
 - 完了後、方向性の確認を促して `/arc-planning` へ案内
 

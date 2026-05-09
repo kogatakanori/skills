@@ -16,7 +16,7 @@ Spec の内容: [specの全文]
 4. 必要な環境変数・設定が存在するか確認する
 
 報告形式：
-- 各依存関係: EXISTS/MISSING/VERSION_CONFLICT と詳細
-- 外部API機能: CONFIRMED/UNCERTAIN/UNAVAILABLE
+- 各依存関係: 確認済み/未存在/バージョン競合 と詳細
+- 外部API機能: 利用可能/不明/利用不可
 - 設定要件: セットアップが必要なもの
-- 依存関係の総合判定: FEASIBLE/CONDITIONAL/INFEASIBLE
+- 依存関係の総合判定: 実現可能/条件付き/実現困難
