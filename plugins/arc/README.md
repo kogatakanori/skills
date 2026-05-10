@@ -53,6 +53,10 @@ GitHub Issue
       │ ← git push / PR作成の承認
       ▼
    PR作成（Closes #NNN → マージ時にIssue自動クローズ）
+
+# PRマージ後（任意のタイミングで実行）
+/arc-cleaning
+  └─ マージ済みworktreeを検出して削除
 ```
 
 ## データの置き場所
@@ -103,6 +107,15 @@ specをTDDタスクリストに分解し、品質確認後にIssueコメント�
   5. 非機能タスクの有無
 - タスクリストを `<!-- arc:tasks -->` 識別子付きでIssueコメントとして投稿
 - **人間の介入なしに `/arc-implementing` へ自動移行**
+
+### `/arc-cleaning`
+
+ローカルの `.claude/worktrees/issue-*` を一覧表示し、対応するPRがマージ済みのworktreeを削除する。
+
+- `git worktree list` でローカルのworktreeを取得
+- 各worktreeのブランチに対応するPRのマージ状態を `gh pr list` で確認
+- マージ済みのworktreeを確認後に `git worktree remove` と `git branch -d` で削除
+- 未マージのworktreeはそのまま保持
 
 ### `/arc-implementing`
 
