@@ -12,9 +12,17 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 
 ### Step 1: Spec・調査結果の自動取得
 
+**ISSUE_NUM・REPOの取得（bash不要）**
+
+1. `ISSUE_NUM`: システムプロンプトの `gitStatus` セクションに含まれる現在のブランチ名（例: `feature/issue-42-add-auth`）から正規表現 `issue-(\d+)` で抽出する。該当しない場合はユーザーに正しいブランチへ切り替えるよう案内して終了する。
+
+2. `REPO`: Read ツールで `.git/config` を読み取り、`[remote "origin"]` の `url` 行から `owner/repo` 形式で抽出する。
+   - `git@github.com:owner/repo.git` → `owner/repo`
+   - `https://github.com/owner/repo.git` → `owner/repo`
+
+**Spec・調査結果の取得**:
+
 ```bash
-ISSUE_NUM=$(git branch --show-current | grep -oE 'issue-[0-9]+' | grep -oE '[0-9]+')
-REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body')
 INVESTIGATION=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \

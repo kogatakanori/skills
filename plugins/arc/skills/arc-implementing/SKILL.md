@@ -12,11 +12,19 @@ IssueのtasksコメントのタスクをTDDで全て自律実装し、専門レ�
 
 ### Step 1: Issue情報・タスク・Spec読み込み
 
-```bash
-ISSUE_NUM=$(git branch --show-current | grep -oE 'issue-[0-9]+' | grep -oE '[0-9]+')
-REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
-ISSUE_URL=$(gh issue view ${ISSUE_NUM} --json url --jq .url)
+**ISSUE_NUM・REPO・ISSUE_URLの取得（bash不要）**
 
+1. `ISSUE_NUM`: システムプロンプトの `gitStatus` セクションに含まれる現在のブランチ名（例: `feature/issue-42-add-auth`）から正規表現 `issue-(\d+)` で抽出する。該当しない場合はユーザーに正しいブランチへ切り替えるよう案内して終了する。
+
+2. `REPO`: Read ツールで `.git/config` を読み取り、`[remote "origin"]` の `url` 行から `owner/repo` 形式で抽出する。
+   - `git@github.com:owner/repo.git` → `owner/repo`
+   - `https://github.com/owner/repo.git` → `owner/repo`
+
+3. `ISSUE_URL`: `https://github.com/${REPO}/issues/${ISSUE_NUM}` として構築する（bashコマンド不要）。
+
+**タスク・Specの取得**:
+
+```bash
 TASKS_COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:tasks -->"))][0] | .id')
 TASKS_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
