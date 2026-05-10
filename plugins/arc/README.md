@@ -148,6 +148,36 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 
 ## セットアップ（推奨）
 
+### Worktree設定
+
+`/arc-specifying` 実行時に `EnterWorktree` でworktreeが作成されます。以下を設定しておくと、worktree作成時に自動でファイルコピーと初期化が実行されます。
+
+**`.worktreeinclude`**（プロジェクトルートに配置）
+
+worktree作成時にコピーするファイルを列挙する（`.gitignore` に記載されているファイルのみコピー対象）：
+
+```
+.env
+.env.local
+```
+
+**`.claude/settings.json`**（`WorktreeCreate` hook）
+
+worktree作成時に自動実行する初期化処理を設定する：
+
+```json
+{
+  "hooks": {
+    "WorktreeCreate": [{
+      "type": "command",
+      "command": "npm install"
+    }]
+  }
+}
+```
+
+### パーミッション設定
+
 arcをプロジェクトで使用する際、`Write`・`Edit` ツールのパーミッションプロンプトを省略するため、プロジェクトの `.claude/settings.json` に以下の設定を追加することを推奨します。
 
 ```json

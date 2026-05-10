@@ -152,6 +152,17 @@ EOF
 
 **PR URLを出力する。PRがマージされるとIssueは自動でクローズされる。**
 
+### Step 4: worktreeのクリーンアップ
+
+PRがマージされたら `ExitWorktree` ツールを `action="remove"` で呼び出してworktreeを終了する。
+
+セッションをまたいで実行しており `ExitWorktree` が使えない場合は以下を実行する：
+
+```bash
+git worktree remove .claude/worktrees/issue-<N>
+git branch -d <branch-name>
+```
+
 ## Notes
 
 - テストコマンドはプロジェクトの package.json / Makefile / pyproject.toml から自動検出する

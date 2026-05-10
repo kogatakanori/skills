@@ -10,12 +10,17 @@ GitHub IssueからSpec（なぜ・意思決定）をIssueコメントとして�
 
 ## Workflow
 
-### Step 1: Issue取得とブランチ作成
+### Step 1: Issue取得とworktree作成
 
-```bash
-gh issue view <N> --json title,body,labels,assignees,url
-git checkout -b feature/issue-<N>-<slug>
-```
+1. Issue情報を取得する：
+   ```bash
+   gh issue view <N> --json title,body,labels,assignees,url
+   ```
+
+2. `EnterWorktree` ツールで `name=issue-<N>` を指定してworktreeを作成する
+   - `.worktreeinclude` に記載されたファイルが自動コピーされる
+   - `WorktreeCreate` hook が自動実行される
+   - 現在のセッションがworktree内に切り替わる
 
 ### Step 2: 並列コードベース調査
 
