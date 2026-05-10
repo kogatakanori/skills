@@ -146,6 +146,25 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 | quality-reviewer | コード品質レビュー | arc-implementing |
 | cicd-reviewer | CI/CDレビュー | arc-implementing |
 
+## セットアップ（推奨）
+
+arcをプロジェクトで使用する際、`Write`・`Edit` ツールのパーミッションプロンプトを省略するため、プロジェクトの `.claude/settings.json` に以下の設定を追加することを推奨します。
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Write(/**)",
+      "Edit(/**)"
+    ]
+  }
+}
+```
+
+- `/**` はプロジェクトルート以下のみに限定されるため、プロジェクト外のファイルには影響しません
+- `deny` ルールが存在する場合はそちらが優先されます（`.env` や `~/.ssh` 等の保護は維持されます）
+- `.claude/settings.json` が存在しない場合は新規作成してください
+
 ## 使い方
 
 ```bash
