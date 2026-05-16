@@ -163,31 +163,108 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 
 ### Worktree設定
 
-`/arc-specifying` 実行時に `EnterWorktree` でworktreeが作成されます。以下を設定しておくと、worktree作成時に自動でファイルコピーと初期化が実行されます。
+`/arc-specifying` 実行時に `EnterWorktree` でworktreeが作成されます。ポートやDockerのvolumeが並列worktree間で衝突しないよう、以下のhookを設定することを推奨します。
 
 **`.worktreeinclude`**（プロジェクトルートに配置）
 
-worktree作成時にコピーするファイルを列挙する（`.gitignore` に記載されているファイルのみコピー対象）：
+worktree作成時にコピーするファイルを列挙する。ただし `WorktreeCreate` hookを定義した場合はhookが `.worktreeinclude` の処理を担当する（後述）：
 
 ```
 .env
 .env.local
 ```
 
-**`.claude/settings.json`**（`WorktreeCreate` hook）
+**`.claude/hooks/worktree-create.sh`**
 
-worktree作成時に自動実行する初期化処理を設定する：
+```bash
+#!/usr/bin/env bash
+# WorktreeCreate hook: worktreeを作成してport/volume設定を注入する
+INPUT=$(cat)
+NAME=$(echo "$INPUT"       | jq -r '.worktree_name')
+CWD=$(echo "$INPUT"        | jq -r '.cwd')
+SOURCE_REF=$(echo "$INPUT" | jq -r '.source_ref')
+BASE_PATH=$(echo "$INPUT"  | jq -r '.base_path')
+
+ISSUE_NUM=$(echo "$NAME" | grep -oE '[0-9]+' | head -1 || echo "0")
+OFFSET=$((ISSUE_NUM % 100))
+PROJECT=$(basename "$CWD")
+WORKTREE_PATH="${BASE_PATH}/${NAME}"
+
+# ブランチ名はworktree名と同じにする（なければ新規作成）
+git -C "$CWD" worktree add "$WORKTREE_PATH" -b "$NAME" 2>/dev/null \
+  || git -C "$CWD" worktree add "$WORKTREE_PATH" "$NAME" 2>/dev/null
+
+# .worktreeinclude のファイルをコピー
+# （WorktreeCreate hookを定義するとデフォルトのコピー処理が無効になるため自前で行う）
+if [ -f "$CWD/.worktreeinclude" ]; then
+  while IFS= read -r file || [ -n "$file" ]; do
+    [[ "$file" =~ ^# || -z "$file" ]] && continue
+    if [ -f "$CWD/$file" ]; then
+      mkdir -p "$WORKTREE_PATH/$(dirname "$file")"
+      cp "$CWD/$file" "$WORKTREE_PATH/$file"
+    fi
+  done < "$CWD/.worktreeinclude"
+fi
+
+# port/volume設定を .env に追記
+# （Docker Composeは .env のみ自動読み込み。.env.local は読み込まれない）
+cat >> "$WORKTREE_PATH/.env" << EOF
+# worktree固有の設定（arc自動生成）
+COMPOSE_PROJECT_NAME=${PROJECT}-${NAME}
+APP_PORT=$((3000 + OFFSET))
+DB_PORT=$((5432 + OFFSET))
+EOF
+
+echo "$WORKTREE_PATH"
+```
+
+**`.claude/hooks/worktree-remove.sh`**
+
+```bash
+#!/usr/bin/env bash
+# WorktreeRemove hook: Dockerリソースをクリーンアップしてworktreeを削除する
+INPUT=$(cat)
+WORKTREE_PATH=$(echo "$INPUT" | jq -r '.worktree_path')
+CWD=$(echo "$INPUT"          | jq -r '.cwd')
+
+NAME=$(basename "$WORKTREE_PATH")
+PROJECT=$(basename "$CWD")
+
+docker compose -p "${PROJECT}-${NAME}" down --volumes 2>/dev/null || true
+git -C "$CWD" worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
+git -C "$CWD" branch -d "$NAME" 2>/dev/null || true
+```
+
+**`.claude/settings.json`**（hookの登録と初期化処理）
 
 ```json
 {
   "hooks": {
     "WorktreeCreate": [{
       "type": "command",
-      "command": "npm install"
+      "command": "bash .claude/hooks/worktree-create.sh"
+    }],
+    "WorktreeRemove": [{
+      "type": "command",
+      "command": "bash .claude/hooks/worktree-remove.sh"
     }]
   }
 }
 ```
+
+npmプロジェクトの場合は `worktree-create.sh` の末尾（`echo "$WORKTREE_PATH"` の前）に `npm --prefix "$WORKTREE_PATH" install >&2` を追加する。
+
+**環境変数の使い方**
+
+hookが `.env` に追記した変数をアプリ側で参照することで、worktreeごとにポートとvolumeが分離される：
+
+| 変数 | 例（issue-42） | 用途 |
+|------|--------------|------|
+| `COMPOSE_PROJECT_NAME` | `myapp-issue-42` | Docker network/volume/container名の分離 |
+| `APP_PORT` | `3042` | dev serverのホストポート |
+| `DB_PORT` | `5474` | DBのホストポート |
+
+`docker-compose.yml` では `${APP_PORT:-3000}` のようにデフォルト値付きで参照する。Docker Composeは `.env` を自動で読み込む（`.env.local` は読み込まれない）。
 
 ### パーミッション設定
 

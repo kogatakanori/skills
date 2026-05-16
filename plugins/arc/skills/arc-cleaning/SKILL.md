@@ -44,11 +44,17 @@ git worktree list --porcelain
 
 マージ済みのworktreeが1件以上ある場合、削除対象の一覧を表示してユーザーに確認する。
 
-承認を得たら各worktreeを削除する：
+承認を得たら各worktreeを削除する。`.claude/hooks/worktree-remove.sh` が存在する場合は先に実行してDockerリソース等をクリーンアップする（`WorktreeRemove` hookはgitコマンド直接実行では発火しないため）：
 
 ```bash
-git worktree remove <worktree_path>
-git branch -d <branch-name>
+# worktree-remove.sh が存在する場合はスクリプトを直接呼び出す
+if [ -f ".claude/hooks/worktree-remove.sh" ]; then
+  echo '{"hook_event_name":"WorktreeRemove","worktree_path":"<worktree_path>","cwd":"'"$(pwd)"'"}' \
+    | bash .claude/hooks/worktree-remove.sh
+else
+  git worktree remove <worktree_path>
+  git branch -d <branch-name>
+fi
 ```
 
 ### Step 4: 結果の表示
