@@ -10,6 +10,30 @@ GitHub IssueからSpec（なぜ・意思決定）をIssueコメントとして�
 
 ## Workflow
 
+### Step 0: Hooks設定チェックと自動セットアップ
+
+`.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定の場合、以下を自動セットアップする：
+
+1. `.claude/hooks/` ディレクトリを作成
+2. `../../templates/hooks/worktree-create.sh` を `.claude/hooks/worktree-create.sh` にコピー
+3. `../../templates/hooks/worktree-remove.sh` を `.claude/hooks/worktree-remove.sh` にコピー
+4. 両ファイルに実行権限を付与：`chmod +x .claude/hooks/worktree-*.sh`
+5. `.claude/settings.json` に hooks エントリを追加（既存設定とマージ）：
+   ```json
+   {
+     "hooks": {
+       "WorktreeCreate": [{"type": "command", "command": "bash .claude/hooks/worktree-create.sh"}],
+       "WorktreeRemove": [{"type": "command", "command": "bash .claude/hooks/worktree-remove.sh"}]
+     }
+   }
+   ```
+
+hookの内容：
+- **worktree-create.sh**: worktree作成 → `.worktreeinclude` のファイルコピー → 依存関係インストール（コメントアウト済み）
+- **worktree-remove.sh**: worktreeとブランチを削除
+
+既に両hookが設定済みの場合はこのステップをスキップする。
+
 ### Step 1: Issue取得とworktree作成
 
 1. Issue情報を取得する：
