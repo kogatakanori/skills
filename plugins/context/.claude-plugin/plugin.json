@@ -1,0 +1,10 @@
+{
+  "name": "context",
+  "description": "Personal context loader — load career, skills, thinking, and profile on demand from your private context repo",
+  "version": "1.0.0",
+  "author": {
+    "name": "Takanori Koga"
+  },
+  "homepage": "https://github.com/kogatakanori/skills/tree/main/plugins/context",
+  "license": "MIT"
+}
