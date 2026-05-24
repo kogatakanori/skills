@@ -85,9 +85,11 @@ grep -rn "変更前のimport path" --include="*.ts" --include="*.dart" .
 - Migration guide: [URL]（存在する場合）
 ```
 
-breaking changes がある場合は上記テーブル形式を使う。ない場合（patchのみ、または差分なし）は以下の形式で簡潔に記録する：
+breaking changes がある場合は上記テーブル形式を使う。ない場合（patchのみ、または差分なし）は Breaking Changes セクションに `- なし` と記録する：
 
 ```
 ### [パッケージ名] vX.Y.Z → vA.B.C
-変更なし
+
+#### Breaking Changes
+- なし
 ```
