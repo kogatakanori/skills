@@ -69,19 +69,11 @@
     "command": ".claude/statusline.sh"
   },
   "enabledPlugins": {
-    "example-skills@anthropic-agent-skills": true,
     "reviewing-skill@kogatakanori-skills": true,
     "pattern-detector@kogatakanori-skills": true,
-    "verifying-consistency@kogatakanori-skills": true,
-    "context7@claude-plugins-official": true
+    "verifying-consistency@kogatakanori-skills": true
   },
   "extraKnownMarketplaces": {
-    "anthropic-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/skills"
-      }
-    },
     "kogatakanori-skills": {
       "source": {
         "source": "github",
