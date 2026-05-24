@@ -174,6 +174,8 @@ worktree作成時にコピーするファイルを列挙する。ただし `Work
 .env.local
 ```
 
+以下のスクリプトはarcプラグインの `templates/hooks/` に収録されており、`/arc-specifying` の初回実行時にプロジェクトの `.claude/hooks/` へ自動コピーされます。カスタマイズする場合は以下を参考にしてください。
+
 **`.claude/hooks/worktree-create.sh`**
 
 ```bash
@@ -244,6 +246,8 @@ git -C "$CWD" branch -d "$NAME" 2>/dev/null || true
 
 ### パーミッション設定
 
+#### プロジェクト設定（`.claude/settings.json`）
+
 arcをプロジェクトで使用する際、`Write`・`Edit` ツールのパーミッションプロンプトを省略するため、プロジェクトの `.claude/settings.json` に以下の設定を追加することを推奨します。
 
 ```json
@@ -257,9 +261,31 @@ arcをプロジェクトで使用する際、`Write`・`Edit` ツールのパー
 }
 ```
 
-- `/**` はプロジェクトルート以下のみに限定されるため、プロジェクト外のファイルには影響しません
+- プロジェクトの `.claude/settings.json` に記載した `/` 始まりのパスはプロジェクトルート以下に自動スコープされます（Claude Code の仕様）。そのため `/**` と書いてもプロジェクト外のファイルには影響しません
 - `deny` ルールが存在する場合はそちらが優先されます（`.env` や `~/.ssh` 等の保護は維持されます）
 - `.claude/settings.json` が存在しない場合は新規作成してください
+
+#### グローバル設定（`~/.claude/settings.json`）
+
+arcはテンプレートファイル（`templates/`）やエージェント定義（`agents/`）をプラグインディレクトリから読み込みます。このディレクトリはプロジェクト外のため、**グローバル設定**（`~/.claude/settings.json`）へのReadパーミッション追加が必要です（プロジェクト設定では許可できません）。
+
+`/arc-specifying` の初回実行時に自動セットアップされます。手動で設定する場合：
+
+```json
+// ~/.claude/settings.json
+{
+  "permissions": {
+    "allow": [
+      "Read(~/path/to/your/skills/plugins/arc/**)"
+    ]
+  }
+}
+```
+
+- `~/` プレフィックスを使うことで移植性が高く（ホームディレクトリ基準）、マシン間で共有しやすい
+- `/**` で `templates/`・`agents/` 以下すべてのファイルをカバー
+- `~/path/to/your/skills/plugins/arc` の `path/to/your/skills/plugins/arc` 部分を、ホームディレクトリからの実際の相対パスに置き換えてください（例: `~/ghq/github.com/yourname/skills/plugins/arc`）
+- `~/.claude/settings.json` が存在しない場合は新規作成してください
 
 ## 使い方
 

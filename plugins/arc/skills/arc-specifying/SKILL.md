@@ -12,6 +12,22 @@ GitHub IssueからSpec（なぜ・意思決定）をIssueコメントとして�
 
 ### Step 0: Hooks設定チェックと自動セットアップ
 
+#### 0-a: Readパーミッション設定チェック
+
+arcプラグインはプロジェクト外のパスにあるため、プロジェクト設定（`.claude/settings.json`）では許可できない。グローバル設定（`~/.claude/settings.json`）の `permissions.allow` 配列にarcプラグインのルートパスを含むエントリ（`~/...arc.../**` のようなパターン）が存在しない場合、以下を自動セットアップする：
+
+1. `Read` ツールでこのSKILL.mdを読み込んだ際の絶対パス（例: `/home/user/.../plugins/arc/skills/arc-specifying/SKILL.md`）から2階層上（`../..`）でarcのルートディレクトリを計算する
+2. 計算した絶対パスを `~/` 形式に変換する（`$HOME` に一致するプレフィックス部分を `~/` に置換）
+3. `~/.claude/settings.json`（存在しない場合は新規作成）の `permissions.allow` に `Read(~/path/to/arc/**)` を追加する（既存設定とマージ）
+
+**`~/` 形式を使う理由**: グローバル設定では `~/` プレフィックス形式が推奨。絶対パス（`/home/user/...` のような形式）は移植性が低い。
+
+**設定反映のタイミング**: グローバル設定の変更はClaude Codeの再起動後に有効になります。設定を書き換えた場合はユーザーに「設定を反映するにはClaude Codeを再起動してください」と案内し、再起動後に改めて `/arc-specifying` を実行するよう促す。
+
+arcルートへのReadパーミッションが既に設定済みの場合はこのステップをスキップする。
+
+#### 0-b: Hooks設定チェック
+
 `.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定の場合、以下を自動セットアップする：
 
 1. `.claude/hooks/` ディレクトリを作成
