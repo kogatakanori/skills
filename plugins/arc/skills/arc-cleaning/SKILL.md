@@ -14,7 +14,10 @@ user_invocable: true
 
 **REPOの取得（bash不要）**
 
-Read ツールで `.git/config` を読み取り、`[remote "origin"]` の `url` 行から `owner/repo` 形式で抽出する。
+以下のコマンドで取得する（worktree環境でも動作する）：
+```bash
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+```
 
 **worktree一覧の取得**：
 

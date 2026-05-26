@@ -16,9 +16,10 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 
 1. `ISSUE_NUM`: システムプロンプトの `gitStatus` セクションに含まれる現在のブランチ名（例: `feature/issue-42-add-auth`）から正規表現 `issue-(\d+)` で抽出する。該当しない場合はユーザーに正しいブランチへ切り替えるよう案内して終了する。
 
-2. `REPO`: Read ツールで `.git/config` を読み取り、`[remote "origin"]` の `url` 行から `owner/repo` 形式で抽出する。
-   - `git@github.com:owner/repo.git` → `owner/repo`
-   - `https://github.com/owner/repo.git` → `owner/repo`
+2. `REPO`: 以下のコマンドで取得する（worktree環境でも動作する）：
+   ```bash
+   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   ```
 
 **Spec・調査結果の取得**:
 
