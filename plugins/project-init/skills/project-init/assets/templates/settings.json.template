@@ -50,7 +50,30 @@
       "Bash(pip3 install:*)",
     ],
     "ask": [],
-    "allow": []
+    "allow": [
+      "Read(/**)",
+      "Edit(/**)",
+      "Write(/**)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)",
+      "Bash(git remote*)",
+      "Bash(git worktree list*)",
+      "Bash(git ls-files*)",
+      "Bash(gh repo view*)",
+      "Bash(gh issue list*)",
+      "Bash(gh issue view*)",
+      "Bash(gh issue status*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr status*)",
+      "Bash(gh run list*)",
+      "Bash(gh run view*)",
+      "Bash(gh workflow list*)",
+      "Bash(gh workflow view*)"
+    ]
   },
   "hooks": {
     "PostToolUse": [

@@ -56,7 +56,7 @@ mkdir -p .claude
 - **language**: japanese
 - **statusLine**: `type: "command"`, `command: ".claude/statusline.sh"`
 - **enabledPlugins**: `context7@claude-plugins-official: true`（Claude公式プラグインとして有効化）
-- **permissions.allow**: 空（`[]`）
+- **permissions.allow**: プロジェクト内のRead/Edit/Write（`/**`スコープ）・git読み取り系（log/show/diff/status/branch/remote/worktree list/ls-files）・gh読み取り系（repo view/issue list|view|status/pr list|view|status/run list|view/workflow list|view）
 - **permissions.deny**: .env・SSH鍵・秘密鍵・credentials.json・sudo・rm -rf などのセキュリティ除外設定
 - **hooks.PostToolUse**: Write/Edit ツール使用後に `.claude/hooks/post_write_lint.sh` を実行
 - **env.CLAUDE_CODE_DISABLE_1M_CONTEXT**: `"1"`（1Mコンテキスト無効化）
