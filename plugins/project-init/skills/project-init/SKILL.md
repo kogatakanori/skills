@@ -16,7 +16,10 @@ user_invocable: true
 | `.claude/statusline.sh` | セッション情報（モデル・コンテキスト・コスト・ブランチ）を表示するスクリプト |
 | `.claude/hooks/stop-consistency-check.sh` | Stop hook — 作業完了時に実装とドキュメントの整合性を確認するスクリプト |
 | `README.md` | プロジェクト名・目次・docs/へのリンク |
-| `AGENT.md` | エージェントへの指示（アーキテクチャ・開発ルールなど） |
+| `AGENT.md` | `@docs/context/` への参照と共通コマンド |
+| `docs/context/decisions.md` | 設計判断とその理由の記録（git管理） |
+| `docs/context/constraints.md` | 変更前確認事項・変更してはいけないことの記録（git管理） |
+| `docs/context/feedback.md` | Claudeへのフィードバック・好みの記録（git管理） |
 | `CLAUDE.md` | `@AGENT.md` への参照のみ |
 | `.gitignore` | 汎用的な除外設定 |
 
@@ -66,16 +69,25 @@ mkdir -p .claude
 
 テンプレート（`assets/templates/README.md.template`）を使用し、`{{PROJECT_NAME}}` をプロジェクト名に置換して作成する。
 
-`docs/` ディレクトリも作成する：
+`docs/context/` ディレクトリも作成する：
 ```bash
-mkdir -p docs
+mkdir -p docs/context
 ```
 
 #### AGENT.md
 
 テンプレート（`assets/templates/AGENT.md.template`）を使用し、`{{PROJECT_NAME}}` を置換して作成する。
 
-エージェントへの指示ファイル。後からユーザーが編集してプロジェクト固有の情報を追加するための雛形。
+`@docs/context/` への参照をトップに持つエントリポイント。セッション開始時にdocs/context/以下を自動読み込みする。
+
+#### docs/context/decisions.md / constraints.md / feedback.md
+
+各テンプレートをそのままコピーして作成する：
+- `assets/templates/docs/context/decisions.md.template` → `docs/context/decisions.md`
+- `assets/templates/docs/context/constraints.md.template` → `docs/context/constraints.md`
+- `assets/templates/docs/context/feedback.md.template` → `docs/context/feedback.md`
+
+git管理されるプロジェクトの「記憶」置き場。ユーザーが編集してプロジェクト固有の制約・判断・フィードバックを蓄積する。
 
 #### CLAUDE.md
 
@@ -118,15 +130,19 @@ chmod +x .claude/hooks/stop-consistency-check.sh
 - ✅ .claude/settings.json  — セキュリティdeny設定・PostToolUseフック・context7プラグイン設定済み
 - ✅ .claude/statusline.sh  — セッション情報ステータスラインスクリプト作成済み
 - ✅ README.md              — プロジェクト名とdocs/へのリンク追加済み
-- ✅ AGENT.md               — 雛形作成済み。プロジェクト固有情報を追記してください
+- ✅ AGENT.md               — @docs/context/ 参照設定済み
+- ✅ docs/context/decisions.md   — 設計判断の記録ファイル作成済み
+- ✅ docs/context/constraints.md — 変更前確認事項・制約ファイル作成済み
+- ✅ docs/context/feedback.md    — Claudeへのフィードバックファイル作成済み
 - ✅ CLAUDE.md              — @AGENT.md を参照するよう設定済み
 - ✅ .claude/hooks/stop-consistency-check.sh — 整合性チェックStop hook作成済み
 - ✅ .gitignore             — 汎用設定適用済み
 - ⏭ docs/                  — ディレクトリ作成済み
 
 次のステップ：
-1. AGENT.md にプロジェクトのアーキテクチャや開発ルールを追記
-2. .claude/settings.json の permissions.allow にプロジェクト固有のコマンドを追加
+1. docs/context/decisions.md にアーキテクチャ決定を記録
+2. docs/context/constraints.md に変更してはいけないことを記録
+3. .claude/settings.json の permissions.allow にプロジェクト固有のコマンドを追加
 ```
 
 ### Step 5: 既存ファイルの不足設定を提案する（既存プロジェクトの場合）
@@ -152,21 +168,21 @@ cat .claude/settings.json
 
 テンプレートに含まれるパターンのうち、既存の `.gitignore` に存在しないものをリストアップして提案する。
 
-#### AGENT.md のセクション差分チェック
+#### docs/context/ のチェック
 
-テンプレートに存在するが既存の `AGENT.md` に不足しているセクションを特定して提案する。
-
-テンプレートと既存ファイルのセクション（`## ` ヘッダー）を比較する：
+`docs/context/` ディレクトリと3ファイルが存在するか確認する：
 
 ```bash
-# テンプレートのセクション一覧
-grep "^## " assets/templates/AGENT.md.template
-
-# 既存ファイルのセクション一覧
-grep "^## " AGENT.md
+ls docs/context/decisions.md docs/context/constraints.md docs/context/feedback.md 2>/dev/null
 ```
 
-テンプレートにあって既存ファイルにないセクションを「不足セクション」として特定し、追加すべきMarkdownスニペットを提示する。上書きはしない。
+不足しているファイルがあれば、テンプレートから作成することを提案する。
+
+また、既存の `AGENT.md` に `@docs/context/` への参照が含まれているか確認し、なければ追加を提案する：
+
+```bash
+grep "@docs/context" AGENT.md
+```
 
 ## テンプレートファイルの場所
 
@@ -178,8 +194,12 @@ assets/templates/
 ├── AGENT.md.template       — AGENT.md の雛形（{{PROJECT_NAME}} プレースホルダーあり）
 ├── CLAUDE.md.template      — CLAUDE.md の雛形（@AGENT.md の1行のみ）
 ├── .gitignore.template     — .gitignore の雛形
-└── hooks/
-    └── stop-consistency-check.sh.template  — Stop hookスクリプトの雛形（実行権限付与が必要）
+├── hooks/
+│   └── stop-consistency-check.sh.template  — Stop hookスクリプトの雛形（実行権限付与が必要）
+└── docs/context/
+    ├── decisions.md.template   — 設計判断の記録テンプレート
+    ├── constraints.md.template — 変更前確認事項・制約テンプレート
+    └── feedback.md.template    — Claudeへのフィードバックテンプレート
 ```
 
 テンプレートを読み込んでから内容を確認し、適切に `{{PROJECT_NAME}}` を置換して使用すること。
