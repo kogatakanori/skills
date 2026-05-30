@@ -86,6 +86,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/stop-consistency-check.sh"
+          }
+        ]
+      }
     ]
   },
   "env": {

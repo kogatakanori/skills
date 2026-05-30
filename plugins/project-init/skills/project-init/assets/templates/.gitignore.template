@@ -64,3 +64,4 @@ screenshot
 
 # claude
 .claude/settings.local.json
+.claude/.consistency_hash

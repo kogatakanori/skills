@@ -14,6 +14,7 @@ user_invocable: true
 |---------|------|
 | `.claude/settings.json` | セキュリティdeny設定・PostToolUseフック・ステータスライン・context7プラグイン設定 |
 | `.claude/statusline.sh` | セッション情報（モデル・コンテキスト・コスト・ブランチ）を表示するスクリプト |
+| `.claude/hooks/stop-consistency-check.sh` | Stop hook — 作業完了時に実装とドキュメントの整合性を確認するスクリプト |
 | `README.md` | プロジェクト名・目次・docs/へのリンク |
 | `AGENT.md` | エージェントへの指示（アーキテクチャ・開発ルールなど） |
 | `CLAUDE.md` | `@AGENT.md` への参照のみ |
@@ -92,6 +93,17 @@ chmod +x .claude/statusline.sh
 
 セッションのモデル・コンテキスト使用率・コスト・経過時間・ブランチ名を表示するステータスラインスクリプト。
 
+#### .claude/hooks/stop-consistency-check.sh
+
+テンプレート（`assets/templates/hooks/stop-consistency-check.sh.template`）をコピーして作成し、実行権限を付与する。
+
+```bash
+mkdir -p .claude/hooks
+chmod +x .claude/hooks/stop-consistency-check.sh
+```
+
+作業完了後に実装とドキュメントの整合性を確認するStop hookスクリプト。変更パターン（コードのみ／ドキュメントのみ／両方）に応じてClaudeへの確認プロンプトを出力する。
+
 #### .gitignore
 
 テンプレート（`assets/templates/.gitignore.template`）をそのままコピーして作成する。
@@ -108,6 +120,7 @@ chmod +x .claude/statusline.sh
 - ✅ README.md              — プロジェクト名とdocs/へのリンク追加済み
 - ✅ AGENT.md               — 雛形作成済み。プロジェクト固有情報を追記してください
 - ✅ CLAUDE.md              — @AGENT.md を参照するよう設定済み
+- ✅ .claude/hooks/stop-consistency-check.sh — 整合性チェックStop hook作成済み
 - ✅ .gitignore             — 汎用設定適用済み
 - ⏭ docs/                  — ディレクトリ作成済み
 
@@ -139,6 +152,22 @@ cat .claude/settings.json
 
 テンプレートに含まれるパターンのうち、既存の `.gitignore` に存在しないものをリストアップして提案する。
 
+#### AGENT.md のセクション差分チェック
+
+テンプレートに存在するが既存の `AGENT.md` に不足しているセクションを特定して提案する。
+
+テンプレートと既存ファイルのセクション（`## ` ヘッダー）を比較する：
+
+```bash
+# テンプレートのセクション一覧
+grep "^## " assets/templates/AGENT.md.template
+
+# 既存ファイルのセクション一覧
+grep "^## " AGENT.md
+```
+
+テンプレートにあって既存ファイルにないセクションを「不足セクション」として特定し、追加すべきMarkdownスニペットを提示する。上書きはしない。
+
 ## テンプレートファイルの場所
 
 ```
@@ -148,7 +177,9 @@ assets/templates/
 ├── README.md.template      — README.md の雛形（{{PROJECT_NAME}} プレースホルダーあり）
 ├── AGENT.md.template       — AGENT.md の雛形（{{PROJECT_NAME}} プレースホルダーあり）
 ├── CLAUDE.md.template      — CLAUDE.md の雛形（@AGENT.md の1行のみ）
-└── .gitignore.template     — .gitignore の雛形
+├── .gitignore.template     — .gitignore の雛形
+└── hooks/
+    └── stop-consistency-check.sh.template  — Stop hookスクリプトの雛形（実行権限付与が必要）
 ```
 
 テンプレートを読み込んでから内容を確認し、適切に `{{PROJECT_NAME}}` を置換して使用すること。
