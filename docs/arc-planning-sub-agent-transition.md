@@ -50,6 +50,11 @@ prompt: 「現在のブランチのIssueに対して arc-implementing のワー�
 
 タスク数が5〜15個の場合、各タスクのテスト作成・実装・4エージェントレビューがすべて独立したコンテキスト内で実行されるため、後半タスクの品質低下を防ぐ。
 
+## 前提条件・制約
+
+- sub-agentの `gitStatus` にブランチ名（`issue-N`）が含まれること（ISSUE_NUM自己取得の前提）
+- arc-implementing Step 3 のユーザー確認プロンプト（PR作成確認）がsub-agent経由でもメインセッションに届くこと
+
 ## ADR
 
 この機能の設計判断・代替案の検討・採用理由は [Issue #3](https://github.com/kogatakanori/skills/issues/3) を参照。
