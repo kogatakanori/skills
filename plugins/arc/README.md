@@ -106,7 +106,7 @@ specをTDDタスクリストに分解し、品質確認後にIssueコメント�
   4. Goalのカバレッジ
   5. 非機能タスクの有無
 - タスクリストを `<!-- arc:tasks -->` 識別子付きでIssueコメントとして投稿
-- **人間の介入なしに `/arc-implementing` へ自動移行**
+- **人間の介入なしに `Agent` ツールで sub-agent を spawn し、`arc-implementing` を新しいコンテキストで実行**
 
 ### `/arc-cleaning`
 
