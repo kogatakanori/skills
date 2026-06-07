@@ -88,7 +88,11 @@ EOF
 人間の介入なしに実装フェーズへ移行する：
 
 1. "タスク分解が完了しました。実装フェーズを開始します..." と表示する
-2. **`/arc-implementing` スキルのワークフローを Step 1 から実行する**
+2. **`Agent` ツールで sub-agent を spawn し、以下の prompt を渡す：**
+   ```
+   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。ISSUE_NUM と REPO はこの prompt の値を使用すること。
+   ```
+   `<N>` と `<owner/repo>` は Step 1 で取得済みの値に置換する。
 
 ## Notes
 
