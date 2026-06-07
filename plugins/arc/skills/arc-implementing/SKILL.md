@@ -101,7 +101,11 @@ specとdocsも読み込んで実装の文脈として利用する。
 - 既存の `## ADR` セクションがある場合（別Issueで作られた機能の修正時）は、新しい Issue 番号と URL に更新する
 
 **⑨ tasksコメントを更新し、実装タスクをコミット**
-- IssueのtasksコメントをPATCHして該当タスクを `- [x]` に更新する（③と同様）
+- IssueのtasksコメントをPATCHして該当タスクを `- [x]` に更新する：
+  ```bash
+  gh api repos/${REPO}/issues/comments/${TASKS_COMMENT_ID} \
+    -X PATCH -f body="<更新後のtasks内容>"
+  ```
 - `git commit -m "feat: implement <task description> (#NNN)"`
 
 ---
