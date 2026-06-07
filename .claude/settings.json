@@ -9,7 +9,7 @@
     "pr": "🤖 Generated with Claude Code"
   },
   "permissions": {
-    "allow": [],
+    "allow": ["mcp__context7__*"],
     "deny": [
       "Read(.env)",
       "Write(.env)",
@@ -71,7 +71,8 @@
   "enabledPlugins": {
     "reviewing-skill@kogatakanori-skills": true,
     "pattern-detector@kogatakanori-skills": true,
-    "verifying-consistency@kogatakanori-skills": true
+    "verifying-consistency@kogatakanori-skills": true,
+    "arc@kogatakanori-skills": true
   },
   "extraKnownMarketplaces": {
     "kogatakanori-skills": {
