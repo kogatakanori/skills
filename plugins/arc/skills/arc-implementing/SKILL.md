@@ -55,6 +55,8 @@ specとdocsも読み込んで実装の文脈として利用する。
 - テストが誤って通ってしまう場合はテストコードを修正する
 
 **③ tasksコメントを更新し、テストタスクをコミット**
+- type-check を実行してエラーがないことを確認する（未実装シンボル由来の型エラーは許容する。それ以外のエラーがあればテストコードを修正する。検出できない場合はスキップする。最大2回修正しても解消しない場合はユーザーに報告する）
+- 検出したテストコマンドを実行して RED になることを最終確認する（検出できない場合はスキップする）
 - IssueのtasksコメントをPATCHして該当タスクを `- [x]` に更新する：
   ```bash
   gh api repos/${REPO}/issues/comments/${TASKS_COMMENT_ID} \
@@ -101,6 +103,8 @@ specとdocsも読み込んで実装の文脈として利用する。
 - 既存の `## ADR` セクションがある場合（別Issueで作られた機能の修正時）は、新しい Issue 番号と URL に更新する
 
 **⑨ tasksコメントを更新し、実装タスクをコミット**
+- type-check を実行してエラーがないことを確認する（エラーがあれば実装コードを修正する。検出できない場合はスキップする。最大2回修正しても解消しない場合はユーザーに報告する）
+- 検出したテストコマンドを実行して全テストが GREEN になることを最終確認する（検出できない場合はスキップする）
 - IssueのtasksコメントをPATCHして該当タスクを `- [x]` に更新する：
   ```bash
   gh api repos/${REPO}/issues/comments/${TASKS_COMMENT_ID} \
@@ -171,5 +175,12 @@ git branch -d <branch-name>
 ## Notes
 
 - テストコマンドはプロジェクトの package.json / Makefile / pyproject.toml から自動検出する
+- type-check コマンドは以下の順で検出する：
+  1. `package.json` の `scripts` に `type-check` キーがあれば使用（`npm run type-check`）
+  2. `package.json` の `scripts` に `typecheck` キーがあれば使用（`npm run typecheck`）
+  3. 上記がなければ `npx --no-install tsc --noEmit` を試みる（ネットワークインストールは行わない）
+  4. いずれも存在しない場合はスキップする
+- テストコマンドが検出できない場合はスキップする
+- lint は PostToolUse hook の責務（Write/Edit ごと）、type-check・test は本ワークフロー③・⑨の責務（commit 直前）。型検査を hook に移さないこと
 - コミットメッセージはConventional Commits形式に従う（`feat/fix/test/docs:` プレフィックス）
 - `plans/` ディレクトリは使用しない（タスクの状態管理はIssueコメントで行う）
