@@ -32,13 +32,14 @@ planningフェーズのコンテキスト（spec・調査結果・タスク分�
 
 ### 変更後（Step 6）
 
+`Agent` ツールで sub-agent を spawn し、以下の prompt を渡す：
+
 ```
-Agent ツールを使って sub-agent を spawn し、arc-implementing のワークフローを実行させる。
-prompt: 「現在のブランチのIssueに対して arc-implementing のワークフローを Step 1 から実行してください」
+ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。ISSUE_NUM と REPO はこの prompt の値を使用すること。
 ```
 
-- sub-agentは `gitStatus`（ブランチ名）から `ISSUE_NUM` を自力で抽出する
-- sub-agentは `.git/config` から `REPO` を自力で取得する
+- `<N>` と `<owner/repo>` は arc-planning Step 1 で取得済みの値に置換する
+- ISSUE_NUM・REPOを明示的に渡すことで、sub-agentのgitStatus継承に依存しない
 - メインセッション（planning）のコンテキストはsub-agent起動後に終了し、実装ループの影響を受けない
 
 ### コンテキスト分離の効果
