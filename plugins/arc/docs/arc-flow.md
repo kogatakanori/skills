@@ -36,23 +36,23 @@
 
 ## スキルとエージェントの対応表
 
-| エージェント | arc-specifying | arc-designing | arc-planning | arc-implementing ⑥ | arc-implementing 2.5 |
-|-------------|:--------------:|:-------------:|:------------:|:-------------------:|:--------------------:|
-| spec-validator | ✅ 常時 | | | | |
-| codebase-analyst | ✅ 常時 | | | | |
-| architecture-analyst | ✅ 常時 | | | | |
-| dependency-analyst | | ✅ 常時 | | | |
-| conflict-analyst | | ✅ 常時 | | | |
-| web-research-analyst | | 🔶 条件付き | | | |
-| implementation-analyst | | | ✅ 常時 | | |
-| quality-reviewer | | | | ✅ 常時 | ✅ 常時 |
-| architecture-linter | | | | ✅ 常時 | ✅ 常時 |
-| security-reviewer | | | | 🔶 条件付き | 🔶 条件付き |
-| architecture-reviewer | | | | 🔶 条件付き | 🔶 条件付き |
-| cicd-reviewer | | | | 🔶 条件付き | 🔶 条件付き |
-| spec-coverage-reviewer | | | | | ✅ 常時 |
+| エージェント | arc-specifying | arc-designing | arc-planning | arc-implementing |
+|-------------|:--------------:|:-------------:|:------------:|:----------------:|
+| spec-validator | ✅ 常時 | | | |
+| codebase-analyst | ✅ 常時 | | | |
+| architecture-analyst | ✅ 常時 | | | |
+| dependency-analyst | | ✅ 常時 | | |
+| conflict-analyst | | ✅ 常時 | | |
+| web-research-analyst | | 🔶 条件付き | | |
+| implementation-analyst | | | ✅ 常時 | |
+| quality-reviewer | | | | ✅ 常時 |
+| architecture-linter | | | | ✅ 常時 |
+| security-reviewer | | | | 🔶 条件付き |
+| architecture-reviewer | | | | 🔶 条件付き |
+| cicd-reviewer | | | | 🔶 条件付き |
+| spec-coverage-reviewer | | | | ✅ 最終のみ |
 
-> ✅ 常時起動 / 🔶 変更内容によって条件起動
+> ✅ 常時起動 / 🔶 変更内容によって条件起動 / ✅ 最終のみ = 全タスク完了後の Step 2.5 でのみ起動
 
 ---
 
