@@ -1,6 +1,6 @@
 ---
 name: spec-coverage-reviewer
-description: Reviews whether all Goals and Acceptance Criteria from the spec have corresponding test coverage in the implementation — reports uncovered requirements as CRITICAL
+description: Reviews whether all Goals, Acceptance Criteria, and Constraints from the spec have corresponding test coverage in the implementation — reports uncovered requirements as CRITICAL
 tools: Read, Grep, Glob, Bash
 model: opus
 ---

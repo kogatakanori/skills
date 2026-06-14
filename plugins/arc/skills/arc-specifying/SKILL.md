@@ -1,6 +1,6 @@
 ---
 name: arc-specifying
-description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, runs spec-validator to surface ambiguities and clarifies them one question at a time. Then runs parallel investigation agents and creates a spec built on clear, confirmed intent. Fully stops after posting and waits for human approval before any next phase. Part of the Arc SDLC workflow.
+description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, runs spec-validator to clarify Why, What, Constraints, and Domain Model one question at a time. Then runs parallel investigation agents and creates a spec built on clear, confirmed intent — without Scope, frameworks, or ADR (those belong to arc-investigating). Fully stops after posting and waits for human approval. Part of the Arc SDLC workflow.
 user_invocable: true
 ---
 
@@ -88,6 +88,8 @@ Q1. [質問内容]
 
 得られた全ての回答（調査結果＋ユーザー確認結果）を「明確化されたコンテキスト」として記録し、Step 2以降に活用する。
 
+**⚠️ 注意**: spec-validatorはWhy/What/Constraints/Domain Modelのみを明確化する。Scope（境界）・実装アプローチ・技術選択は一切聞かない。
+
 ### Step 2: 並列コードベース調査
 
 `../../agents/codebase-analyst.md` と `../../agents/architecture-analyst.md` を Read し、`[issueのタイトルと本文]`（Step 1.5で明確化されたコンテキストも含む）を実際の内容で置換して、2体のExploreエージェントを**同時に**起動する：
@@ -100,12 +102,14 @@ Q1. [質問内容]
 
 Step 1.5の明確化されたコンテキスト＋Step 2の調査結果を統合して、`../../templates/spec.md.template` を参照しながらSpecを作成する。
 
-フォーマットは `references/spec-format.md` に従う。重要な点：
+重要な点：
 - **Context（Why）**: Issueの背景・解決する課題を明確に記述
 - **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
-- **Acceptance Criteria**: 各Goalに対してテスト可能な受け入れ基準（Step 1.5の明確化で得た合意内容を反映）
-- **ADR**: 採用アプローチ・代替案・具体的な却下理由（Step 1.5で意思決定の根拠を確認済みなら反映）
-- **Non-Goals**: スコープ外を明確に記述
+- **Acceptance Criteria**: 各Goalに対してビジネス視点での完了条件（Step 1.5の明確化で得た合意内容を反映）
+- **Constraints**: 守らなければならないビジネスルール・不変条件（予算・法律・ユーザー体験など）
+- **Domain Model**: この機能で登場するエンティティ・概念の定義（調査結果から既存用語との整合を確認）
+
+**Specに含めないもの**: スコープ（In/Out of Scope）・実装アプローチ・技術選択 → これらはarc-investigatingで決定する
 
 作成したSpecをIssueにGitHubコメントとして投稿する：
 
@@ -137,10 +141,10 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 確認すべき点:
 - Context（Why）: 解決したい課題が正確に記述されているか
-- Goal: 達成したいアウトカムがこのPRのスコープと合っているか
-- Acceptance Criteria: テスト可能な受け入れ基準が全Goalをカバーしているか
-- ADR: 採用アプローチ・代替案・却下理由が納得できるか
-- Non-Goals: 今回やらないことが明確になっているか
+- Goal: 達成したいアウトカムが正確に表現されているか
+- Acceptance Criteria: ビジネス視点での完了条件が全Goalをカバーしているか
+- Constraints: 守らなければならないビジネスルール・不変条件が網羅されているか
+- Domain Model: 機能で使う用語・概念が明確に定義されているか
 
 承認する場合: `/arc-investigating` を実行してください
 修正が必要な場合: 会話でAIに修正箇所を伝えてください（Spec修正フローが起動します）
