@@ -42,11 +42,15 @@ SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
 
 #### Phase 2a: ローカル調査（常に実行）
 
-`../../agents/dependency-analyst.md` と `../../agents/conflict-analyst.md` を Read し、`[specの全文]` を実際のspec内容で置換して、2体のExploreエージェントを**同時に**起動する：
+以下4エージェントのファイルを Read し、`[specの全文]` を実際のspec内容で置換して**同時に**起動する：
 
-**Agent A（dependency-analyst）**: ライブラリ・外部APIの存在・バージョン適合性を確認
+**Agent A（codebase-analyst）**: 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用）
 
-**Agent B（conflict-analyst）**: 既存コードとの競合・破壊的変更・パフォーマンス懸念を調査
+**Agent B（architecture-analyst）**: アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用）
+
+**Agent C（dependency-analyst）**: ライブラリ・外部APIの存在・バージョン適合性を確認
+
+**Agent D（conflict-analyst）**: 既存コードとの競合・破壊的変更・パフォーマンス懸念を調査
 
 #### Phase 2b: Web調査クエリの生成
 

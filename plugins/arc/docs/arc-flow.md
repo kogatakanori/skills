@@ -19,8 +19,8 @@
 | エージェント | モデル | 役割 | 起動方式 |
 |-------------|--------|------|----------|
 | **spec-validator** | Opus | Issue内容から設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
-| **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査 | Explore |
-| **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査 | Explore |
+| **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用） | Explore |
+| **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
 | **dependency-analyst** | Opus | ライブラリ・外部APIの存在とバージョン適合性を確認 | Explore |
 | **conflict-analyst** | Opus | 既存コードとの競合・破壊的変更・パフォーマンス懸念を調査 | Explore |
 | **web-research-analyst** | Opus | ライブラリのメンテ状況・セキュリティ・breaking changesをWeb検索で確認 | Explore（条件付き） |
@@ -39,8 +39,8 @@
 | エージェント＼スキル | arc-specifying | arc-designing | arc-planning | arc-implementing |
 |-------------|:--------------:|:-------------:|:------------:|:----------------:|
 | spec-validator | ✅ 常時 | | | |
-| codebase-analyst | ✅ 常時 | | | |
-| architecture-analyst | ✅ 常時 | | | |
+| codebase-analyst | | ✅ 常時 | | |
+| architecture-analyst | | ✅ 常時 | | |
 | dependency-analyst | | ✅ 常時 | | |
 | conflict-analyst | | ✅ 常時 | | |
 | web-research-analyst | | 🔶 条件付き | | |
@@ -252,13 +252,8 @@ flowchart TD
     subgraph SPEC["📋 arc-specifying"]
         direction TB
         S15["Step 1.5 意図の明確化"]
-        S2["Step 2 コードベース調査"]
-        sv["spec-validator\n設計ツリーのQ&A生成\nコードベース自律調査"]
-        cb["codebase-analyst\n類似機能・パターン調査"]
-        aa["architecture-analyst\nアーキテクチャ制約・docs調査"]
+        sv["spec-validator\n設計ツリーのQ&A生成\nコードベース自律調査\n（Domain Model確認・既存API確認など\n意図に必要な範囲のみ）"]
         S15 -->|"常時"| sv
-        S2 -->|"常時 並列"| cb
-        S2 -->|"常時 並列"| aa
     end
 
     %% ─────────────────────────────
@@ -266,11 +261,15 @@ flowchart TD
     %% ─────────────────────────────
     subgraph DESIGN["🔧 arc-designing"]
         direction TB
-        D2a["Phase 2a ローカル調査"]
+        D2a["Phase 2a ローカル調査（4並列）"]
         D2c["Phase 2c Web調査"]
+        cb["codebase-analyst\n類似機能・パターン調査\n（ADR・設計判断の文脈）"]
+        aa["architecture-analyst\nアーキテクチャ制約・docs調査\n（設計判断の前提）"]
         dep["dependency-analyst\nライブラリ・API存在確認"]
         con["conflict-analyst\n既存コード競合・破壊的変更"]
         web["web-research-analyst\n不明項目がある場合のみ"]
+        D2a -->|"常時 並列"| cb
+        D2a -->|"常時 並列"| aa
         D2a -->|"常時 並列"| dep
         D2a -->|"常時 並列"| con
         D2c -->|"🔶 条件付き"| web

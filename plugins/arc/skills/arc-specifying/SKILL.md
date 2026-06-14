@@ -90,26 +90,18 @@ Q1. [質問内容]
 
 **⚠️ 注意**: spec-validatorはWhy/What/Constraints/Domain Modelのみを明確化する。Scope（境界）・実装アプローチ・技術選択は一切聞かない。
 
-### Step 2: 並列コードベース調査
+### Step 2: Spec作成と投稿
 
-`../../agents/codebase-analyst.md` と `../../agents/architecture-analyst.md` を Read し、`[issueのタイトルと本文]`（Step 1.5で明確化されたコンテキストも含む）を実際の内容で置換して、2体のExploreエージェントを**同時に**起動する：
-
-**Agent A（codebase-analyst）**: 類似機能・競合コード・踏襲すべきパターンを調査
-
-**Agent B（architecture-analyst）**: アーキテクチャ制約・既存docs・テスト基盤を調査
-
-### Step 3: Spec作成と投稿
-
-Step 1.5の明確化されたコンテキスト＋Step 2の調査結果を統合して、`../../templates/spec.md.template` を参照しながらSpecを作成する。
+Step 1.5の明確化されたコンテキストをもとに、`../../templates/spec.md.template` を参照しながらSpecを作成する。
 
 重要な点：
 - **Context（Why）**: Issueの背景・解決する課題を明確に記述
 - **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
 - **Acceptance Criteria**: 各Goalに対してビジネス視点での完了条件（Step 1.5の明確化で得た合意内容を反映）
 - **Constraints**: 守らなければならないビジネスルール・不変条件（予算・法律・ユーザー体験など）
-- **Domain Model**: この機能で登場するエンティティ・概念の定義（調査結果から既存用語との整合を確認）
+- **Domain Model**: この機能で登場するエンティティ・概念の定義（spec-validatorの調査で確認した既存用語を反映）
 
-**Specに含めないもの**: スコープ（In/Out of Scope）・実装アプローチ・技術選択 → これらはarc-designingで決定する
+**Specに含めないもの**: スコープ（In/Out of Scope）・実装アプローチ・技術選択・コードパターン → これらはarc-designingで決定する
 
 作成したSpecをIssueにGitHubコメントとして投稿する：
 
@@ -121,13 +113,13 @@ EOF
 )"
 ```
 
-### Step 4: Docsファイル生成
+### Step 3: Docsファイル生成
 
 `../../templates/docs.md.template` を参照して `docs/<feature-name>.md` を生成する。
 
 フォーマットは `references/docs-format.md` に従う。機能の概要・使い方・仕様を記述する（「何を・どう使うか」にフォーカス）。
 
-### Step 5: コミットと完全停止（人間の承認を待つ）
+### Step 4: コミットと完全停止（人間の承認を待つ）
 
 ```bash
 git add docs/
