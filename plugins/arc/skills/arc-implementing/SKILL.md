@@ -77,14 +77,32 @@ specとdocsも読み込んで実装の文脈として利用する。
 - テストが全てGREENになることを確認する
 - 失敗した場合は実装を修正して⑤を繰り返す
 
-**⑥ 専門レビューエージェントを並列起動**
+**⑥ 専門レビューエージェントを選択・並列起動**
 
-`git diff HEAD` を実行してdiffを取得する。以下の4つのエージェントファイルを Read し、対応するプレースホルダーを置換して、4つのgeneral-purposeエージェントを**同時に**起動してコードレビューを実施する：
+`git diff HEAD` を実行してdiffと変更ファイル一覧を取得する：
 
-- **`../../agents/security-reviewer.md`**: `[git diff HEAD の出力]` と `[specの内容]` を置換
-- **`../../agents/architecture-reviewer.md`**: `[git diff HEAD の出力]`・`[specのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換
-- **`../../agents/quality-reviewer.md`**: `[git diff HEAD の出力]` を置換
-- **`../../agents/cicd-reviewer.md`**: `[git diff HEAD の出力]` と `[specの内容]` を置換
+```bash
+DIFF=$(git diff HEAD)
+CHANGED_FILES=$(git diff HEAD --name-only)
+CHANGED_COUNT=$(echo "$CHANGED_FILES" | grep -c .)
+NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
+```
+
+変更ファイル一覧を以下のルールで照合し、起動するエージェントを決定する：
+
+| エージェント | 起動条件 |
+|---|---|
+| **quality-reviewer** | 常に起動 |
+| **security-reviewer** | `CHANGED_FILES` に（**大文字小文字を区別せず**）`auth\|login\|password\|token\|jwt\|session\|permission\|oauth\|api/\|route\|controller\|handler\|sql\|query\|repository\|validator\|middleware\|sanitize\|secret\|crypto\|hash\|serial\|upload\|billing\|payment` のいずれかを含む場合 |
+| **architecture-reviewer** | `CHANGED_COUNT` が3以上 OR `NEW_FILES` が**2件以上** OR `CHANGED_FILES` に `service\|domain\|infra\|repository\|module\|core\|gateway\|usecase\|adapter` のいずれかを含む場合 |
+| **cicd-reviewer** | `CHANGED_FILES` に（**大文字小文字を区別せず**）`.github/\|.gitlab-ci\|Jenkinsfile\|.circleci\|migration\|migrate\|schema\|\.env\|config/\|settings\|package\.json\|package-lock\|yarn\.lock\|pnpm-lock\|poetry\.lock\|Pipfile\.lock\|pyproject\.toml\|requirements\.txt\|Cargo\.toml\|go\.mod\|Makefile\|Dockerfile\|docker-compose\|terraform/\|\.tf\|k8s/\|kubernetes/\|helm/\|ansible/\|bitbucket-pipelines` のいずれかを含む場合 |
+
+起動対象と判定したエージェントファイルを Read し、対応するプレースホルダーを置換して**同時に**起動する（quality-reviewerのみになる場合もあり得る）：
+
+- **`../../agents/security-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
+- **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[specのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換
+- **`../../agents/quality-reviewer.md`** (常時): `[git diff HEAD の出力]` を置換
+- **`../../agents/cicd-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
 
 **⑦ 指摘の統合と修正**
 - 全エージェントの指摘を統合する
@@ -116,7 +134,39 @@ specとdocsも読み込んで実装の文脈として利用する。
 
 **⑩ 次の未完了タスクへ**
 - `- [ ]` のタスクが残っていれば、タスク種別（`[test]` or `[impl]`）を確認して①または④へ戻る
-- 全タスク完了したらStep 3へ
+- 全タスク完了したらStep 2.5へ
+
+### Step 2.5: 最終一括レビュー
+
+全`[impl]`タスクの実装完了後、PRブランチ全体を対象に最終レビューを実施する。
+
+```bash
+BASE=$(git merge-base HEAD origin/HEAD 2>/dev/null \
+  || git merge-base HEAD origin/main 2>/dev/null \
+  || git merge-base HEAD origin/master 2>/dev/null)
+# BASEが空の場合（デフォルトブランチがmain/master以外、またはorigin/HEADが未設定）は
+# ユーザーにベースブランチ名を確認してから git merge-base HEAD origin/<branch> で取得する
+FULL_DIFF=$(git diff "${BASE}")
+FULL_CHANGED_FILES=$(git diff "${BASE}" --name-only)
+FULL_CHANGED_COUNT=$(echo "$FULL_CHANGED_FILES" | grep -c .)
+FULL_NEW_FILES=$(git diff "${BASE}" --name-only --diff-filter=A)
+```
+
+⑥のフィルタリングルール表を参照してエージェントを選択し、**同時に**起動する。判定変数の対応は以下の通り：
+
+| ⑥の変数名 | Step 2.5 での対応変数 |
+|---|---|
+| `CHANGED_FILES` | `FULL_CHANGED_FILES` |
+| `CHANGED_COUNT` | `FULL_CHANGED_COUNT` |
+| `NEW_FILES` | `FULL_NEW_FILES` |
+
+各エージェントのプレースホルダーは以下の通り置換する：
+- `[git diff HEAD の出力]` → `FULL_DIFF` の内容（**PRブランチ全体のdiff**。エージェント起動時の指示にも「このdiffはPR全体の累積差分です」と明記してコンテキストを正確に伝える）
+- その他のプレースホルダーは⑥と同様
+
+**⑥ですでに検出・修正した指摘の重複は無視してよい。** 最終レビューの目的はタスク間をまたぐ横断的な問題（全タスクの組み合わせで生じる不整合・セキュリティ上の見落とし等）の検出である。
+
+CRITICAL/HIGHの新規指摘は必ず修正し、テストがGREENであることを確認してからコミットする。完了したらStep 3へ。
 
 ### Step 3: PR自動作成
 
