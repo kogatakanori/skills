@@ -6,7 +6,7 @@
 
 | スキル | 呼び出し方 | 役割 | 自動移行 |
 |--------|-----------|------|----------|
-| **arc-specifying** | `/arc-specifying` | 意図（Why/What/Acceptance Criteria/Constraints/Domain Model）を明確化し、Specを作成する | なし（人間ゲートで停止） |
+| **arc-specifying** | `/arc-specifying` | 意図（Why/Users/What/Use Cases/Acceptance Criteria/Constraints/Domain Model）を明確化し、Specを作成する | なし（人間ゲートで停止） |
 | **arc-designing** | `/arc-designing` | HOWを設計する。実現性確認・スコープ定義・ADR策定を行う | なし（人間ゲートで停止） |
 | **arc-planning** | `/arc-planning` | SpecとDesignをTDDタスクに分解し、自律FBループで品質確認後に投稿する | arc-implementing へ自動移行 |
 | **arc-implementing** | `/arc-implementing` | TDD（Red-Green）でタスクを自律実装し、専門レビューエージェントのFBループ後にPRを作成する | なし（PR作成前に人間ゲート） |
@@ -18,7 +18,7 @@
 
 | エージェント | モデル | 役割 | 起動方式 |
 |-------------|--------|------|----------|
-| **spec-validator** | Opus | Issue内容から設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
+| **spec-validator** | Opus | Why/Who/What/Use Cases/Constraints/Domain Modelの6軸で設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
 | **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用） | Explore |
 | **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
 | **dependency-analyst** | Opus | ライブラリ・外部APIの存在とバージョン適合性を確認 | Explore |
@@ -65,9 +65,11 @@ flowchart TD
     subgraph S["📋 Specifying — 意図を明確にする"]
         direction TB
         s1["Why: なぜ必要か"]
+        s6["Users: 誰が使うか（役割・技術レベル・文脈）"]
         s2["What: 何を達成するか"]
+        s7["Use Cases: どんなシナリオで利用するか"]
         s3["Acceptance Criteria: ビジネス視点での完了条件"]
-        s4["Constraints: ビジネス制約（予算・法律・UXなど）"]
+        s4["Constraints: ビジネス制約・品質の下限"]
         s5["Domain Model: ことばの定義"]
     end
 
@@ -134,7 +136,7 @@ flowchart TD
     end
 
     HG1{{"👤 人間ゲート\nSpec承認"}}
-    GH_spec[("<!-- arc:spec -->\n意図のみ\nWhy / What\nAcceptance Criteria\nConstraints / Domain Model")]
+    GH_spec[("<!-- arc:spec -->\n意図のみ\nWhy / Users / What\nUse Cases\nAcceptance Criteria\nConstraints / Domain Model")]
 
     %% ─────────────────────────────
     %% arc-designing

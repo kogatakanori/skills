@@ -96,9 +96,11 @@ Step 1.5の明確化されたコンテキストをもとに、`../../templates/s
 
 重要な点：
 - **Context（Why）**: Issueの背景・解決する課題を明確に記述
+- **Users（誰が使うか）**: 役割・技術レベル・利用文脈を記述（spec-validatorのWho確認結果を反映）
 - **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
+- **Use Cases**: GoalをどのようなシナリオでUserが利用するかを具体的に記述（UC-1, UC-2形式）
 - **Acceptance Criteria**: 各Goalに対してビジネス視点での完了条件（Step 1.5の明確化で得た合意内容を反映）
-- **Constraints**: 守らなければならないビジネスルール・不変条件（予算・法律・ユーザー体験など）
+- **Constraints**: ビジネスルール・不変条件・品質の下限（予算・法律・UX・応答速度など。HOWには踏み込まない）
 - **Domain Model**: この機能で登場するエンティティ・概念の定義（spec-validatorの調査で確認した既存用語を反映）
 
 **Specに含めないもの**: スコープ（In/Out of Scope）・実装アプローチ・技術選択・コードパターン → これらはarc-designingで決定する
@@ -133,9 +135,11 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 確認すべき点:
 - Context（Why）: 解決したい課題が正確に記述されているか
+- Users: 誰が使うかが明確か（役割・技術レベル・文脈）
 - Goal: 達成したいアウトカムが正確に表現されているか
+- Use Cases: Goalを実現する具体的なシナリオが記述されているか
 - Acceptance Criteria: ビジネス視点での完了条件が全Goalをカバーしているか
-- Constraints: 守らなければならないビジネスルール・不変条件が網羅されているか
+- Constraints: ビジネスルール・不変条件・品質の下限が網羅されているか
 - Domain Model: 機能で使う用語・概念が明確に定義されているか
 
 承認する場合: `/arc-designing` を実行してください
