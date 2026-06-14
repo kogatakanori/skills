@@ -1,5 +1,112 @@
 # Arc SDLC フロー図
 
+---
+
+## スキル一覧
+
+| スキル | 呼び出し方 | 役割 | 自動移行 |
+|--------|-----------|------|----------|
+| **arc-specifying** | `/arc-specifying` | 意図（Why/What/AC/Constraints/Domain Model）を明確化し、Specを作成する | なし（人間ゲートで停止） |
+| **arc-designing** | `/arc-designing` | HOWを設計する。実現性確認・スコープ定義・ADR策定を行う | なし（人間ゲートで停止） |
+| **arc-planning** | `/arc-planning` | SpecとDesignをTDDタスクに分解し、自律FBループで品質確認後に投稿する | arc-implementing へ自動移行 |
+| **arc-implementing** | `/arc-implementing` | TDD（Red-Green）でタスクを自律実装し、専門レビューエージェントのFBループ後にPRを作成する | なし（PR作成前に人間ゲート） |
+| **arc-cleaning** | `/arc-cleaning` | マージ済みworktreeを検出・削除し、ローカルを整理する | — |
+
+---
+
+## エージェント一覧
+
+| エージェント | モデル | 役割 | 起動方式 |
+|-------------|--------|------|----------|
+| **spec-validator** | Opus | Issue内容から設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
+| **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査 | Explore |
+| **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査 | Explore |
+| **dependency-analyst** | Opus | ライブラリ・外部APIの存在とバージョン適合性を確認 | Explore |
+| **conflict-analyst** | Opus | 既存コードとの競合・破壊的変更・パフォーマンス懸念を調査 | Explore |
+| **web-research-analyst** | Opus | ライブラリのメンテ状況・セキュリティ・breaking changesをWeb検索で確認 | Explore（条件付き） |
+| **implementation-analyst** | Opus | 変更が必要な全ファイルとテスト要件を特定し、タスクの依存順序を整理 | Explore |
+| **quality-reviewer** | Opus | 命名・責務・重複・テスト適切性・複雑度をレビュー | Explore |
+| **architecture-linter** | Opus | TDD遵守・レイヤー境界・パッケージ制限・ADRルールを静的チェック | Explore |
+| **security-reviewer** | Opus | OWASP Top 10・認証・入力検証・機密データ露出をレビュー | Explore（条件付き） |
+| **architecture-reviewer** | Opus | 関心の分離・依存方向・ADR整合性・結合問題をレビュー | Explore（条件付き） |
+| **cicd-reviewer** | Opus | ビルド失敗・マイグレーション漏れ・デプロイ順序問題をレビュー | Explore（条件付き） |
+| **spec-coverage-reviewer** | Opus | Goal/AC/Constraintsに対応するテストカバレッジを検証 | Explore |
+
+---
+
+## スキルとエージェントの対応表
+
+| エージェント | arc-specifying | arc-designing | arc-planning | arc-implementing ⑥ | arc-implementing 2.5 |
+|-------------|:--------------:|:-------------:|:------------:|:-------------------:|:--------------------:|
+| spec-validator | ✅ 常時 | | | | |
+| codebase-analyst | ✅ 常時 | | | | |
+| architecture-analyst | ✅ 常時 | | | | |
+| dependency-analyst | | ✅ 常時 | | | |
+| conflict-analyst | | ✅ 常時 | | | |
+| web-research-analyst | | 🔶 条件付き | | | |
+| implementation-analyst | | | ✅ 常時 | | |
+| quality-reviewer | | | | ✅ 常時 | ✅ 常時 |
+| architecture-linter | | | | ✅ 常時 | ✅ 常時 |
+| security-reviewer | | | | 🔶 条件付き | 🔶 条件付き |
+| architecture-reviewer | | | | 🔶 条件付き | 🔶 条件付き |
+| cicd-reviewer | | | | 🔶 条件付き | 🔶 条件付き |
+| spec-coverage-reviewer | | | | | ✅ 常時 |
+
+> ✅ 常時起動 / 🔶 変更内容によって条件起動
+
+---
+
+## フェーズ概要
+
+```mermaid
+flowchart LR
+    Issue[["🎫 Issue\n（要望・課題）"]]
+
+    subgraph S["📋 Specifying\n意図を明確にする"]
+        s1["Why\nなぜ必要か"]
+        s2["What\n何を達成するか"]
+        s3["AC\n完了条件"]
+        s4["Constraints\nビジネス制約"]
+        s5["Domain Model\nことばの定義"]
+    end
+
+    subgraph D["🔧 Designing\nHOWを設計する"]
+        d1["実現性確認"]
+        d2["スコープ定義"]
+        d3["ADR策定"]
+    end
+
+    subgraph P["📝 Planning\nタスクに分解する"]
+        p1["TDDタスク分解\n[test]→[impl]"]
+        p2["Goal→タスク\nトレーサビリティ"]
+    end
+
+    subgraph I["⚙️ Implementing\n自律実装する"]
+        i1["Red-Green\nTDDサイクル"]
+        i2["レビューFB\nエージェント群"]
+        i3["最終横断\nレビュー"]
+        i4["PR作成"]
+    end
+
+    HG1{{"👤 Spec承認"}}
+    HG2{{"👤 方向性確認"}}
+    HG3{{"👤 カバレッジ確認"}}
+    HG4{{"👤 PR承認"}}
+    PR[["🔀 Pull Request"]]
+
+    Issue --> S --> HG1 --> D --> HG2 --> P -->|"🤖 自動"| I
+    I --> HG3 --> HG4 --> PR
+
+    style HG1 fill:#ff9900,color:#000
+    style HG2 fill:#ff9900,color:#000
+    style HG3 fill:#ff9900,color:#000
+    style HG4 fill:#ff9900,color:#000
+```
+
+> **人間が関与するのは4箇所のみ。** それ以外はAIが自律的に判断・実行・修正する。
+
+---
+
 ## 1. 全体フロー（スキル・ゲート・データフロー）
 
 ```mermaid
