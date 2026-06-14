@@ -36,7 +36,7 @@
 
 ## スキルとエージェントの対応表
 
-| エージェント | arc-specifying | arc-designing | arc-planning | arc-implementing |
+| エージェント ↓ / スキル → | arc-specifying | arc-designing | arc-planning | arc-implementing |
 |-------------|:--------------:|:-------------:|:------------:|:----------------:|
 | spec-validator | ✅ 常時 | | | |
 | codebase-analyst | ✅ 常時 | | | |
