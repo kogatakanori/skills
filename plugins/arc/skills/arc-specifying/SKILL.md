@@ -12,9 +12,7 @@ Specは全開発の土台。**最初に意図を明確にしてから書く**。
 
 ## Workflow
 
-### Step 0: Hooks設定チェックと自動セットアップ
-
-#### 0-a: Readパーミッション設定チェック
+### Step 0: Readパーミッション設定チェック
 
 arcプラグインはプロジェクト外のパスにあるため、プロジェクト設定（`.claude/settings.json`）では許可できない。グローバル設定（`~/.claude/settings.json`）の `permissions.allow` 配列にarcプラグインのルートパスを含むエントリ（`~/...arc.../**` のようなパターン）が存在しない場合、以下を自動セットアップする：
 
@@ -28,41 +26,22 @@ arcプラグインはプロジェクト外のパスにあるため、プロジ�
 
 arcルートへのReadパーミッションが既に設定済みの場合はこのステップをスキップする。
 
-#### 0-b: Hooks設定チェック
-
-`.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定の場合、以下を自動セットアップする：
-
-1. `.claude/hooks/` ディレクトリを作成
-2. `../../templates/hooks/worktree-create.sh` を `.claude/hooks/worktree-create.sh` にコピー
-3. `../../templates/hooks/worktree-remove.sh` を `.claude/hooks/worktree-remove.sh` にコピー
-4. 両ファイルに実行権限を付与：`chmod +x .claude/hooks/worktree-*.sh`
-5. `.claude/settings.json` に hooks エントリを追加（既存設定とマージ）：
-   ```json
-   {
-     "hooks": {
-       "WorktreeCreate": [{"type": "command", "command": "bash .claude/hooks/worktree-create.sh"}],
-       "WorktreeRemove": [{"type": "command", "command": "bash .claude/hooks/worktree-remove.sh"}]
-     }
-   }
-   ```
-
-hookの内容：
-- **worktree-create.sh**: worktree作成 → `.worktreeinclude` のファイルコピー → 依存関係インストール（コメントアウト済み）
-- **worktree-remove.sh**: worktreeとブランチを削除
-
-既に両hookが設定済みの場合はこのステップをスキップする。
-
-### Step 1: Issue取得とworktree作成
+### Step 1: Issue取得とブランチ作成
 
 1. Issue情報を取得する：
    ```bash
    gh issue view <N> --json title,body,labels,assignees,url
    ```
 
-2. `EnterWorktree` ツールで `name=issue-<N>` を指定してworktreeを作成する
-   - `.worktreeinclude` に記載されたファイルが自動コピーされる
-   - `WorktreeCreate` hook が自動実行される
-   - 現在のセッションがworktree内に切り替わる
+2. Issue用ブランチを作成してチェックアウトする：
+   ```bash
+   gh issue develop <N> --checkout
+   ```
+   ブランチ名を確認する（例: `42-add-user-auth`）。
+   `gh issue develop` が使えない場合は以下で代替する：
+   ```bash
+   git checkout -b issue-<N>
+   ```
 
 ### Step 1.5: spec-clarifierによる設計ツリーの明確化
 

@@ -39,6 +39,34 @@ DESIGN_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
 tasksコメントが見つからない場合は `/arc-planning` を先に実行するよう案内して終了。
 spec（意図）・design（ADR・スコープ）・docsも読み込んで実装の文脈として利用する。
 
+**worktreeのセットアップ（必要な場合のみ）**
+
+以下のいずれかに該当する場合、worktreeを作成してセッションを切り替える：
+- `TASKS_CONTENT` に `<!-- worktree: true -->` が含まれる
+- 起動プロンプトに `WORKTREE_NEEDED=true` が含まれる
+
+該当する場合：
+
+1. `.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定であれば自動セットアップする：
+   1. `.claude/hooks/` ディレクトリを作成
+   2. `../../templates/hooks/worktree-create.sh` を `.claude/hooks/worktree-create.sh` にコピー
+   3. `../../templates/hooks/worktree-remove.sh` を `.claude/hooks/worktree-remove.sh` にコピー
+   4. 両ファイルに実行権限を付与：`chmod +x .claude/hooks/worktree-*.sh`
+   5. `.claude/settings.json` の `hooks` に以下をマージ：
+      ```json
+      {
+        "WorktreeCreate": [{"type": "command", "command": "bash .claude/hooks/worktree-create.sh"}],
+        "WorktreeRemove": [{"type": "command", "command": "bash .claude/hooks/worktree-remove.sh"}]
+      }
+      ```
+
+2. `EnterWorktree` ツールで `name=issue-<N>` を指定してworktreeを作成する
+   - `.worktreeinclude` に記載されたファイルが自動コピーされる
+   - `WorktreeCreate` hook が自動実行される
+   - 現在のセッションがworktree内に切り替わる
+
+どちらにも該当しない場合は、arc-specifyingで作成済みのブランチのまま実装を進める。
+
 ### Step 2: TDD実装ループ（全タスク完了まで繰り返す）
 
 未完了タスク（`- [ ]`）を順番に処理する。
@@ -235,7 +263,9 @@ EOF
 
 **PR URLを出力する。PRがマージされるとIssueは自動でクローズされる。**
 
-### Step 4: worktreeのクリーンアップ
+### Step 4: worktreeのクリーンアップ（worktree使用時のみ）
+
+Step 1でworktreeを作成した場合のみ実行する。
 
 PRがマージされたら `ExitWorktree` ツールを `action="remove"` で呼び出してworktreeを終了する。
 
@@ -245,6 +275,8 @@ PRがマージされたら `ExitWorktree` ツールを `action="remove"` で呼�
 git worktree remove .claude/worktrees/issue-<N>
 git branch -d <branch-name>
 ```
+
+worktreeを使用していない場合は何もしない（ブランチはPRマージ後に `/arc-cleaning` でまとめて整理する）。
 
 ## Notes
 

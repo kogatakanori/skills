@@ -129,7 +129,7 @@ flowchart TD
     %% ─────────────────────────────
     subgraph SPEC["📋 /arc-specifying"]
         direction TB
-        S1["Step 1\nIssue取得 + worktree作成"]
+        S1["Step 1\nIssue取得 + ブランチ作成"]
         S15["Step 1.5\n意図の明確化\n1問ずつQ&A"]
         S2["Step 2\nSpec作成"]
         S25["Step 2.5\nspec-reviewer\n品質チェック"]
