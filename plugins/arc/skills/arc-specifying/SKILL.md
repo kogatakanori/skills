@@ -109,16 +109,32 @@ EOF
 
 フォーマットは `references/docs-format.md` に従う。機能の概要・使い方・仕様を記述する（「何を・どう使うか」にフォーカス）。
 
-### Step 5: コミットと案内
+### Step 5: コミットと完全停止（人間の承認を待つ）
 
 ```bash
 git add docs/
 git commit -m "spec: add docs for issue #NNN - <title>"
 ```
 
-**"IssueのSpecコメントを確認し承認したら、`/arc-investigating` を実行してください"** と案内する。IssueのURLも合わせて表示する。
+以下を表示してワークフローを**完全に停止する**：
 
-spec-validatorが検出した指摘と対応状況を簡潔にサマリーとして表示する（「CRITICALを X 件修正して品質基準を通過しました」等）。
+```
+✅ Specの品質検証が完了しました（spec-validatorサマリー: CRITICAL X件修正・HIGH Y件修正）
+
+📋 IssueのSpecコメントを確認してください: <ISSUE_URL>
+
+確認すべき点:
+- Context（Why）: 解決したい課題が正確に記述されているか
+- Goal: 達成したいアウトカムがこのPRのスコープと合っているか
+- Acceptance Criteria: テスト可能な受け入れ基準が全Goalをカバーしているか
+- ADR: 採用アプローチ・代替案・却下理由が納得できるか
+- Non-Goals: 今回やらないことが明確になっているか
+
+承認する場合: `/arc-investigating` を実行してください
+修正が必要な場合: IssueのSpecコメントを直接編集してから `/arc-investigating` を実行してください
+```
+
+**⚠️ 重要: このステップでワークフローは必ず終了する。ユーザーの明示的な指示なしに `/arc-investigating` を自動実行してはならない。**
 
 ## Notes
 
@@ -126,3 +142,4 @@ spec-validatorが検出した指摘と対応状況を簡潔にサマリーとし
 - `docs/` ディレクトリが存在しない場合は作成する
 - 既存の `docs/` ファイルがある場合は上書き更新する
 - Acceptance Criteriaがない場合はspec-validatorがCRITICALを返すため、必ずStep 3.5でキャッチされる
+- **arc-specifyingは後続フェーズに自動移行しない唯一のスキル**。Specは全開発の土台であるため、人間の確認・承認が必須
