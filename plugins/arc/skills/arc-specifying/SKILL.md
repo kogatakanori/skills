@@ -72,9 +72,28 @@ hookの内容：
 
 調査結果を統合し、解消不可能な重大な曖昧点のみ `AskUserQuestion` で確認する（最大2問まで）。
 
-### Step 3: Specコメント投稿
+### Step 3: Spec草案の作成
 
-`../../templates/spec.md.template` を参照してSpecの内容を作成し、IssueにGitHubコメントとして投稿する：
+`../../templates/spec.md.template` を参照してSpecの草案を作成する（まだIssueには投稿しない）。
+
+フォーマットは `references/spec-format.md` に従う。重要な点：
+- **Context（Why）**: Issueの背景・解決する課題を明確に記述
+- **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
+- **Acceptance Criteria**: 各Goalに対してテスト可能な受け入れ基準を記述（必須）
+- **ADR**: なぜこのアーキテクチャを選択したか、代替案と具体的な却下理由を必ず含める
+- **Non-Goals**: スコープを明確に定義する
+
+### Step 3.5: Spec自律検証FBループ
+
+`../../agents/spec-validator.md` を Read し、`[specの内容]` を草案の内容で置換してExploreエージェントを起動する。
+
+**CRITICAL / HIGH** の指摘がある場合は草案を修正して再度検証する（最大3回繰り返す）。3回修正してもCRITICALが残る場合はユーザーに報告して判断を仰ぐ。
+
+**MEDIUM** 以下の指摘のみの場合（または問題なしの場合）は次のステップへ進む。
+
+### Step 3.6: Specコメント投稿
+
+検証を通過したSpecをIssueにGitHubコメントとして投稿する：
 
 ```bash
 gh issue comment <N> --body "$(cat <<'EOF'
@@ -83,11 +102,6 @@ gh issue comment <N> --body "$(cat <<'EOF'
 EOF
 )"
 ```
-
-フォーマットは `references/spec-format.md` に従う。重要な点：
-- **Context（Why）**: Issueの背景・解決する課題を明確に記述
-- **ADR**: なぜこのアーキテクチャを選択したか、代替案と却下理由を必ず含める
-- **Goal/Non-Goals**: スコープを明確に定義する
 
 ### Step 4: Docsファイル生成
 
@@ -104,8 +118,11 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 **"IssueのSpecコメントを確認し承認したら、`/arc-investigating` を実行してください"** と案内する。IssueのURLも合わせて表示する。
 
+spec-validatorが検出した指摘と対応状況を簡潔にサマリーとして表示する（「CRITICALを X 件修正して品質基準を通過しました」等）。
+
 ## Notes
 
 - specの内容はIssueコメントに保存される（`specs/` ディレクトリは使用しない）
 - `docs/` ディレクトリが存在しない場合は作成する
 - 既存の `docs/` ファイルがある場合は上書き更新する
+- Acceptance Criteriaがない場合はspec-validatorがCRITICALを返すため、必ずStep 3.5でキャッチされる
