@@ -6,7 +6,7 @@
 
 | スキル | 呼び出し方 | 役割 | 自動移行 |
 |--------|-----------|------|----------|
-| **arc-specifying** | `/arc-specifying` | 意図（Why/What/AC/Constraints/Domain Model）を明確化し、Specを作成する | なし（人間ゲートで停止） |
+| **arc-specifying** | `/arc-specifying` | 意図（Why/What/Acceptance Criteria/Constraints/Domain Model）を明確化し、Specを作成する | なし（人間ゲートで停止） |
 | **arc-designing** | `/arc-designing` | HOWを設計する。実現性確認・スコープ定義・ADR策定を行う | なし（人間ゲートで停止） |
 | **arc-planning** | `/arc-planning` | SpecとDesignをTDDタスクに分解し、自律FBループで品質確認後に投稿する | arc-implementing へ自動移行 |
 | **arc-implementing** | `/arc-implementing` | TDD（Red-Green）でタスクを自律実装し、専門レビューエージェントのFBループ後にPRを作成する | なし（PR作成前に人間ゲート） |
@@ -30,7 +30,7 @@
 | **security-reviewer** | Opus | OWASP Top 10・認証・入力検証・機密データ露出をレビュー | Explore（条件付き） |
 | **architecture-reviewer** | Opus | 関心の分離・依存方向・ADR整合性・結合問題をレビュー | Explore（条件付き） |
 | **cicd-reviewer** | Opus | ビルド失敗・マイグレーション漏れ・デプロイ順序問題をレビュー | Explore（条件付き） |
-| **spec-coverage-reviewer** | Opus | Goal/AC/Constraintsに対応するテストカバレッジを検証 | Explore |
+| **spec-coverage-reviewer** | Opus | Goal/Acceptance Criteria/Constraintsに対応するテストカバレッジを検証 | Explore |
 
 ---
 
@@ -65,7 +65,7 @@ flowchart LR
     subgraph S["📋 Specifying\n意図を明確にする"]
         s1["Why\nなぜ必要か"]
         s2["What\n何を達成するか"]
-        s3["AC\n完了条件"]
+        s3["Acceptance Criteria\nビジネス視点での完了条件"]
         s4["Constraints\nビジネス制約"]
         s5["Domain Model\nことばの定義"]
     end
@@ -309,7 +309,7 @@ flowchart LR
     end
 
     subgraph IMPL_FINAL["最終レビュー（Step 2.5）"]
-        scr["spec-coverage-reviewer\n常時\nGoal/AC/Constraints\nのテストカバレッジ検証"]
+        scr["spec-coverage-reviewer\n常時\nGoal/Acceptance Criteria/Constraints\nのテストカバレッジ検証"]
     end
 
     I6 -->|"Explore 並列起動"| qr
