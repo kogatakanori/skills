@@ -77,6 +77,27 @@ Phase 2cの後、全エージェントの結果を照合し、依然として`�
 
 ユーザーの回答を踏まえて該当項目の判定を更新し、Step 3へ進む。
 
+### Step 2.5: design-clarifierによる設計方針の明確化
+
+Phase 2aの調査結果をまとめ、`../../agents/design-clarifier.md` を Read する。以下のプレースホルダーを置換してExploreエージェントを起動する：
+- `[specの内容]` → SPEC_CONTENTの内容
+- `[調査結果の要約]` → Phase 2a〜2dの全エージェント結果のサマリー（判明した制約・パターン・実現可能性の要点）
+
+design-clarifierの出力を受け取ったら、以下のフォーマットで1問ずつ聞く：
+
+```
+Q1. [設計判断の質問]
+
+推奨: [design-clarifierが提案した推奨アプローチと根拠]
+```
+
+ユーザーは「はい（推奨通り）」「いいえ（〇〇にしたい）」等と答える。
+回答を受け取ったら次の質問へ進む。全質問を消化するか、設計方針が十分に明確になったら次へ進む。
+
+**「確認の必要なし」と返ってきた場合**、または全質問を消化したら即座にStep 3へ。
+
+得られた全ての回答を「確定した設計方針（DESIGN_DIRECTION）」として記録し、Step 3以降のADR策定に活用する。
+
 ### Step 3: 調査結果の統合と実現性評価
 
 全エージェントの結果を統合し、実現性を3段階で評価：
@@ -87,32 +108,17 @@ Phase 2cの後、全エージェントの結果を照合し、依然として`�
 - 何の対応が必要かを明示
 
 **実現困難**: 根本的な問題がある
-- 具体的な代替アーキテクチャ案を提示
-- 以下の手順でspecコメントのADRセクションを自動更新する：
-
-  ```bash
-  SPEC_COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-    --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .id')
-  ```
-
-  取得した `SPEC_COMMENT_ID` を使い、現在のspecコメント本文の `## ADR` セクション末尾に以下を追記してPATCHする：
-
-  ```
-  ### 調査結果フィードバック（YYYY-MM-DD）
-  **判定**: 実現困難
-  **理由**: [実現困難と判断した具体的な根拠]
-
-  **代替案**:
-  - **案A**: [概要・採用すべき理由]
-  - **案B**: [概要・採用すべき理由]
-  ```
-
-  ```bash
-  gh api repos/${REPO}/issues/comments/${SPEC_COMMENT_ID} \
-    -X PATCH -f body="<ADRセクションを更新した全文>"
-  ```
-
-  更新後、**「specのADRセクションに調査結果を反映しました。内容を確認・修正後、`/arc-designing` を再実行してください」** と案内して終了する（Step 4以降は実行しない）。
+- 具体的な代替アーキテクチャ案を2つ以上提示する
+- `AskUserQuestion` でユーザーに代替案を選択させる：
+  > "以下の技術的問題により、元のアプローチは実現困難です:
+  > 【理由】[実現困難と判断した具体的な根拠]
+  >
+  > 代替案A: [概要・採用すべき理由]
+  > 代替案B: [概要・採用すべき理由]
+  >
+  > どちらで進めますか？"
+- 選択された代替案を `DESIGN_DIRECTION` に記録して Step 4 以降の ADR 策定に反映する
+- ⚠️ Spec の Goal/Why/Constraints は変更しない。HOW（アプローチ）のみを代替案に切り替える
 
 ### Step 4: スコープ定義とPhase分け
 
@@ -144,46 +150,52 @@ EOF
 
 作成したIssue番号とURLを記録し、Step 5のコメントに含める。延期項目がない場合はこのステップをスキップする。
 
-### Step 5: 設計結果をIssueコメントに投稿
+### Step 5: Design作成・品質チェック・投稿
 
-既存の `<!-- arc:design -->` コメントがある場合は更新し、なければ新規投稿する：
+#### Step 5-a: 設計内容の作成（下書き）
 
-```bash
-COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .id')
+Step 2.5 の DESIGN_DIRECTION と Step 3 の実現性評価をもとに、以下のテンプレートで設計内容を作成する（まだ投稿しない）：
 
-BODY="$(cat <<'EOF'
+```
 <!-- arc:design -->
 ## Design
 
 **実現性**: 実現可能 / 条件付き / 実現困難
 **設計日**: YYYY-MM-DD
 
-### 依存関係・統合（Agent A）
-[Agent Aの調査結果サマリー]
+### 調査結果サマリー
 
-### コード競合・パフォーマンス（Agent B）
-[Agent Bの調査結果サマリー]
+#### コードベース調査（codebase-analyst）
+[類似機能・踏襲すべきパターン・ADR文脈]
 
-### Web調査・外部情報（Agent C）
-[Agent Cの調査結果サマリー / または「スキップ（ローカル調査で十分と判断）」]
+#### アーキテクチャ制約（architecture-analyst）
+[既存アーキテクチャ制約・docs・テスト基盤]
+
+#### 依存関係（dependency-analyst）
+[ライブラリ・外部API確認結果]
+
+#### 競合・破壊的変更（conflict-analyst）
+[既存コードとの競合・パフォーマンス懸念]
+
+#### Web調査（web-research-analyst）
+[確認した内容 / または「スキップ（ローカル調査で十分）」]
 
 ### 実現性評価
-[なぜこの判定か、具体的な理由]
+[なぜこの判定か、具体的な根拠]
 
 ### 対応が必要な事項（条件付きの場合）
 - [ ] 対応事項1
-- [ ] 対応事項2
 
-### 代替案（実現困難の場合）
-- **案A**: [概要と採用すべき理由]
-- **案B**: [概要と採用すべき理由]
+### Spec→Designトレーサビリティ
 
-**実現困難時の原則**: Spec の Goal/AC/Why には手を付けない。ADRのアプローチのみを代替案に変更する。
+| Spec要件 | 種別 | 設計上の対応 |
+|---------|------|------------|
+| Goal 1: 〜できる | Goal | [ADRのどのアプローチが対応するか] |
+| UC-1: 〜のとき〜する | Use Case | [どのコンポーネント/フローが処理するか] |
+| Constraint: 〜 | Constraint | [設計上のガードレール] |
+| Goal N: 〜 | Goal | Phase 2 #NNN で対応 |
 
 ### ADR（Architecture Decision Record）
-
-設計結果を踏まえた技術選択の記録。
 
 **採用するアプローチ**:
 [specの意図を実現するための具体的な実装方針。依存ライブラリ・パターン・アーキテクチャを明記]
@@ -195,10 +207,39 @@ BODY="$(cat <<'EOF'
 **トレードオフ・リスク**:
 - [このアプローチを選んだことで生じる制約や将来への影響]
 
+**テスト戦略**:
+- ユニットテスト境界: [どこまでをユニットテストでカバーするか]
+- インテグレーションテスト: [外部依存との境界]
+- モック方針: [外部API/DBをどうモックするか]
+
 ### スコープ（今回実装する範囲）
 
 **In Scope（Phase 1で実装）**: [今回実装するGoalの一覧]
-**Out of Scope（Phase 2以降）**: なし / #NNN [タイトル]（作成したIssueのURL）
+**Out of Scope（Phase 2以降）**: なし / #NNN [タイトル]（Issue URL）
+```
+
+#### Step 5-b: design-reviewerによる品質チェック
+
+`../../agents/design-reviewer.md` を Read し、以下のプレースホルダーを置換してExploreエージェントを起動する：
+- `[specの内容]` → SPEC_CONTENTの内容
+- `[designの内容]` → Step 5-aで作成したDesignの全文
+
+design-reviewerの結果を受け取ったら：
+- **問題なし**: 即座に Step 5-c へ進む
+- **MEDIUM指摘**: 改善推奨として記録し、Designを修正して Step 5-c へ進む
+- **HIGH指摘**: Designを自動修正して Step 5-b を再実行する（最大2回）
+- **CRITICAL指摘**: `AskUserQuestion` でユーザーに確認を求める（GoalがDesignでカバーされていない等の根本的な欠落）
+
+#### Step 5-c: Issueコメントへの投稿
+
+品質チェック通過後、既存の `<!-- arc:design -->` コメントがある場合は更新し、なければ新規投稿する：
+
+```bash
+COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
+  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .id')
+
+BODY="$(cat <<'EOF'
+[Step 5-aで作成した設計内容の全文]
 EOF
 )"
 

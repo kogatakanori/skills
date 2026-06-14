@@ -20,6 +20,8 @@
 |-------------|--------|------|----------|
 | **spec-clarifier** | Opus | Why/Who/What/Use Cases/Constraints/Domain Modelの6軸で設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
 | **spec-reviewer** | Opus | 作成済みSpecを5観点でレビュー（完全性・ACテスト可能性・UC↔Goal整合・Constraints計測可能性・内部整合性）。CRITICALは人間確認、HIGHは自動修正 | Explore |
+| **design-clarifier** | Opus | 調査結果とSpecをもとに、アーキテクチャ・データモデル・統合方式・エラーハンドリング・テスト戦略のHOW判断を推奨回答付きQ&Aで確認する | Explore |
+| **design-reviewer** | Opus | 作成済みDesignをSpecと照合し、Spec要件カバレッジ・トレーサビリティ完全性・Constraintガードレール・テスト戦略を検証する | Explore |
 | **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用） | Explore |
 | **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
 | **dependency-analyst** | Opus | ライブラリ・外部APIの存在とバージョン適合性を確認 | Explore |
@@ -41,6 +43,8 @@
 |-------------|:--------------:|:-------------:|:------------:|:----------------:|
 | spec-clarifier | ✅ 常時 | | | |
 | spec-reviewer | ✅ 常時 | | | |
+| design-clarifier | | ✅ 常時 | | |
+| design-reviewer | | ✅ 常時 | | |
 | codebase-analyst | | ✅ 常時 | | |
 | architecture-analyst | | ✅ 常時 | | |
 | dependency-analyst | | ✅ 常時 | | |
@@ -276,11 +280,17 @@ flowchart TD
         dep["dependency-analyst\nライブラリ・API存在確認"]
         con["conflict-analyst\n既存コード競合・破壊的変更"]
         web["web-research-analyst\n不明項目がある場合のみ"]
+        D25["Step 2.5 設計方針Q&A"]
+        dc["design-clarifier\nアーキテクチャ・データモデル\n統合方式・テスト戦略のHOW判断"]
+        D5b["Step 5-b 品質チェック"]
+        drw["design-reviewer\nSpec要件カバレッジ\nトレーサビリティ完全性\nConstraintガードレール"]
         D2a -->|"常時 並列"| cb
         D2a -->|"常時 並列"| aa
         D2a -->|"常時 並列"| dep
         D2a -->|"常時 並列"| con
         D2c -->|"🔶 条件付き"| web
+        D25 -->|"常時"| dc
+        D5b -->|"常時"| drw
     end
 
     %% ─────────────────────────────
@@ -362,12 +372,22 @@ flowchart TD
 
     subgraph DESIGN_FB["🔧 arc-designing の FB"]
         direction TB
-        inv["調査エージェント群（dependency / conflict / web）"]
-        eval["実現性評価・ADR策定"]
-        alt["Specに代替案をフィードバック"]
-        inv --> eval
+        inv["調査エージェント群（4並列 + Web条件付き）"]
+        dc2["design-clarifier（HOW判断Q&A）"]
+        HUD["👤 回答（推奨回答付き・1問ずつ）"]
+        eval["設計作成（トレーサビリティ含む）"]
+        drw2["design-reviewer（品質チェック）"]
+        alt["👤 代替案選択（AskUserQuestion）"]
+        inv --> dc2
+        dc2 -->|"質問を提示"| HUD
+        HUD -->|"回答を受けて次の質問"| dc2
+        HUD -->|"全質問消化"| eval
         eval -->|"実現困難"| alt
-        alt -->|"修正後 再実行"| inv
+        alt -->|"方針確定 → 再設計"| eval
+        eval --> drw2
+        drw2 -->|"HIGH: 自動修正 → 再実行（最大2回）"| drw2
+        drw2 -->|"CRITICAL: 人間確認"| HUD_crit["👤 設計欠落の確認"]
+        HUD_crit -->|"修正指示"| eval
     end
 
     subgraph PLAN_FB["📝 arc-planning の FB（自律）"]
