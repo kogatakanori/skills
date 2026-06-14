@@ -1,6 +1,6 @@
 ---
 name: arc-specifying
-description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, runs spec-validator to clarify Why, What, Constraints, and Domain Model one question at a time. Then runs parallel investigation agents and creates a spec built on clear, confirmed intent — without Scope, frameworks, or ADR (those belong to arc-designing). Fully stops after posting and waits for human approval. Part of the Arc SDLC workflow.
+description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, runs spec-clarifier to clarify Why, Who, What, Use Cases, Constraints, and Domain Model one question at a time. After the spec is drafted, runs spec-reviewer to validate completeness, AC testability, UC↔Goal alignment, Constraint measurability, and internal consistency. Creates a spec built on clear, confirmed intent — without Scope, frameworks, or ADR (those belong to arc-designing). Fully stops after posting and waits for human approval. Part of the Arc SDLC workflow.
 user_invocable: true
 ---
 
@@ -64,21 +64,21 @@ hookの内容：
    - `WorktreeCreate` hook が自動実行される
    - 現在のセッションがworktree内に切り替わる
 
-### Step 1.5: spec-validatorによる設計ツリーの明確化
+### Step 1.5: spec-clarifierによる設計ツリーの明確化
 
-Issue取得直後に `../../agents/spec-validator.md` を Read し、`[issueまたはspecの内容]` をIssueの全文（タイトル＋本文）で置換してExploreエージェントを起動する。
+Issue取得直後に `../../agents/spec-clarifier.md` を Read し、`[issueまたはspecの内容]` をIssueの全文（タイトル＋本文）で置換してExploreエージェントを起動する。
 
-spec-validatorは：
+spec-clarifierは：
 1. 設計に必要な全決定事項をツリーとして展開する
 2. コードベースを調査して自律的に答えられる項目を解決する
 3. 残った確認事項を「推奨回答付き質問リスト」として返す
 
-**spec-validatorの出力を受け取ったら、以下のフォーマットで1問ずつ聞く**：
+**spec-clarifierの出力を受け取ったら、以下のフォーマットで1問ずつ聞く**：
 
 ```
 Q1. [質問内容]
 
-推奨: [spec-validatorが提案した推奨回答と根拠]
+推奨: [spec-clarifierが提案した推奨回答と根拠]
 ```
 
 ユーザーは「はい（推奨通り）」「いいえ（○○にしたい）」「別の理由で〜」等と答える。
@@ -88,7 +88,7 @@ Q1. [質問内容]
 
 得られた全ての回答（調査結果＋ユーザー確認結果）を「明確化されたコンテキスト」として記録し、Step 2以降に活用する。
 
-**⚠️ 注意**: spec-validatorはWhy/What/Constraints/Domain Modelのみを明確化する。Scope（境界）・実装アプローチ・技術選択は一切聞かない。
+**⚠️ 注意**: spec-clarifierはWhy/Who/What/Use Cases/Constraints/Domain Modelのみを明確化する。Scope（境界）・実装アプローチ・技術選択は一切聞かない。
 
 ### Step 2: Spec作成と投稿
 
@@ -96,12 +96,12 @@ Step 1.5の明確化されたコンテキストをもとに、`../../templates/s
 
 重要な点：
 - **Context（Why）**: Issueの背景・解決する課題を明確に記述
-- **Users（誰が使うか）**: 役割・技術レベル・利用文脈を記述（spec-validatorのWho確認結果を反映）
+- **Users（誰が使うか）**: 役割・技術レベル・利用文脈を記述（spec-clarifierのWho確認結果を反映）
 - **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
 - **Use Cases**: GoalをどのようなシナリオでUserが利用するかを具体的に記述（UC-1, UC-2形式）
 - **Acceptance Criteria**: 各Goalに対してビジネス視点での完了条件（Step 1.5の明確化で得た合意内容を反映）
 - **Constraints**: ビジネスルール・不変条件・品質の下限（予算・法律・UX・応答速度など。HOWには踏み込まない）
-- **Domain Model**: この機能で登場するエンティティ・概念の定義（spec-validatorの調査で確認した既存用語を反映）
+- **Domain Model**: この機能で登場するエンティティ・概念の定義（spec-clarifierの調査で確認した既存用語を反映）
 
 **Specに含めないもの**: スコープ（In/Out of Scope）・実装アプローチ・技術選択・コードパターン → これらはarc-designingで決定する
 
@@ -114,6 +114,16 @@ gh issue comment <N> --body "$(cat <<'EOF'
 EOF
 )"
 ```
+
+### Step 2.5: spec-reviewerによるSpec品質チェック
+
+`../../agents/spec-reviewer.md` を Read し、`[specの内容]` を作成したSpecの内容で置換してExploreエージェントを起動する。
+
+spec-reviewerの結果を受け取ったら：
+- **問題なし**: 即座にStep 3（Docs生成）へ進む
+- **MEDIUM指摘**: 改善推奨として記録し、Specを修正してからStep 3へ進む
+- **HIGH指摘**: Specを自動修正してStep 2.5を再実行する（最大2回）
+- **CRITICAL指摘**: `AskUserQuestion` でユーザーに確認を求める（根本矛盾のため自動修正不可）
 
 ### Step 3: Docsファイル生成
 
@@ -152,10 +162,10 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 ユーザーが「ここを直したい」「このGoalが違う」等と伝えてきた場合、以下のフローで対応する：
 
-**フェーズ1: 修正意図の明確化（spec-validatorを使う）**
+**フェーズ1: 修正意図の明確化（spec-clarifierを使う）**
 
-- `../../agents/spec-validator.md` を Read し、`[issueまたはspecの内容]` を「現在のspec内容 + ユーザーの修正コメント」に置換してExploreエージェントを起動する
-- spec-validatorが設計ツリーを再展開し、修正に関わる決定事項を特定・調査して残った質問リストを返す
+- `../../agents/spec-clarifier.md` を Read し、`[issueまたはspecの内容]` を「現在のspec内容 + ユーザーの修正コメント」に置換してExploreエージェントを起動する
+- spec-clarifierが設計ツリーを再展開し、修正に関わる決定事項を特定・調査して残った質問リストを返す
 - Step 1.5と同じフォーマット（推奨回答付き）で1問ずつ聞く
 - 修正意図が明確になったら次のフェーズへ
 
@@ -182,4 +192,4 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 - `docs/` ディレクトリが存在しない場合は作成する
 - 既存の `docs/` ファイルがある場合は上書き更新する
 - **arc-specifyingは後続フェーズに自動移行しない唯一のスキル**。Specは全開発の土台であるため、人間の確認・承認が必須
-- spec-validatorが「明確化の必要なし」と返した場合でも、Issueが短すぎる・抽象的すぎると感じたら追加で確認してよい
+- spec-clarifierが「明確化の必要なし」と返した場合でも、Issueが短すぎる・抽象的すぎると感じたら追加で確認してよい

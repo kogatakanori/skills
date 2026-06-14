@@ -18,7 +18,8 @@
 
 | エージェント | モデル | 役割 | 起動方式 |
 |-------------|--------|------|----------|
-| **spec-validator** | Opus | Why/Who/What/Use Cases/Constraints/Domain Modelの6軸で設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
+| **spec-clarifier** | Opus | Why/Who/What/Use Cases/Constraints/Domain Modelの6軸で設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
+| **spec-reviewer** | Opus | 作成済みSpecを5観点でレビュー（完全性・ACテスト可能性・UC↔Goal整合・Constraints計測可能性・内部整合性）。CRITICALは人間確認、HIGHは自動修正 | Explore |
 | **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用） | Explore |
 | **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
 | **dependency-analyst** | Opus | ライブラリ・外部APIの存在とバージョン適合性を確認 | Explore |
@@ -38,7 +39,8 @@
 
 | エージェント＼スキル | arc-specifying | arc-designing | arc-planning | arc-implementing |
 |-------------|:--------------:|:-------------:|:------------:|:----------------:|
-| spec-validator | ✅ 常時 | | | |
+| spec-clarifier | ✅ 常時 | | | |
+| spec-reviewer | ✅ 常時 | | | |
 | codebase-analyst | | ✅ 常時 | | |
 | architecture-analyst | | ✅ 常時 | | |
 | dependency-analyst | | ✅ 常時 | | |
@@ -129,10 +131,11 @@ flowchart TD
         direction TB
         S1["Step 1\nIssue取得 + worktree作成"]
         S15["Step 1.5\n意図の明確化\n1問ずつQ&A"]
-        S2["Step 2\n並列コードベース調査"]
-        S3["Step 3\nSpec作成・投稿"]
-        S4["Step 4\nDocs生成"]
-        S1 --> S15 --> S2 --> S3 --> S4
+        S2["Step 2\nSpec作成"]
+        S25["Step 2.5\nspec-reviewer\n品質チェック"]
+        S3["Step 3\nDocs生成"]
+        S4["Step 4\nコミット・完全停止"]
+        S1 --> S15 --> S2 --> S25 --> S3 --> S4
     end
 
     HG1{{"👤 人間ゲート\nSpec承認"}}
@@ -254,8 +257,11 @@ flowchart TD
     subgraph SPEC["📋 arc-specifying"]
         direction TB
         S15["Step 1.5 意図の明確化"]
-        sv["spec-validator\n設計ツリーのQ&A生成\nコードベース自律調査\n（Domain Model確認・既存API確認など\n意図に必要な範囲のみ）"]
+        sv["spec-clarifier\n設計ツリーのQ&A生成\nコードベース自律調査\n（Domain Model確認・既存API確認など\n意図に必要な範囲のみ）"]
+        S25["Step 2.5 品質チェック"]
+        srw["spec-reviewer\n完全性・ACテスト可能性\nUC↔Goal整合\nConstraints計測可能性\n内部整合性"]
         S15 -->|"常時"| sv
+        S25 -->|"常時"| srw
     end
 
     %% ─────────────────────────────
@@ -343,10 +349,15 @@ flowchart TD
 flowchart TD
     subgraph SPEC_FB["📋 arc-specifying の FB"]
         direction TB
-        sv2["spec-validator（設計ツリー展開・調査）"]
+        sv2["spec-clarifier（設計ツリー展開・調査）"]
         HU1["👤 回答（推奨回答付き・1問ずつ）"]
         sv2 -->|"質問を提示"| HU1
         HU1 -->|"回答を受けて次の質問"| sv2
+        srw2["spec-reviewer（品質チェック）"]
+        HU1 -->|"全質問消化 → Spec作成"| srw2
+        srw2 -->|"HIGH: 自動修正 → 再実行（最大2回）"| srw2
+        srw2 -->|"CRITICAL: 人間確認"| HU_crit["👤 根本矛盾の確認"]
+        HU_crit -->|"修正指示"| sv2
     end
 
     subgraph DESIGN_FB["🔧 arc-designing の FB"]
