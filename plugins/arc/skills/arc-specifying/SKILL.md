@@ -96,7 +96,7 @@ Step 1.5の明確化されたコンテキストをもとに、`../../templates/s
 
 重要な点：
 - **Context（Why）**: Issueの背景・解決する課題を明確に記述
-- **Users（誰が使うか）**: 役割・技術レベル・利用文脈を記述（spec-clarifierのWho確認結果を反映）
+- **Who（誰が使うか）**: 役割・技術レベル・利用文脈を記述（spec-clarifierのWho確認結果を反映）
 - **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
 - **Use Cases**: GoalをどのようなシナリオでUserが利用するかを具体的に記述（UC-1, UC-2形式）
 - **Acceptance Criteria**: 各Goalに対してビジネス視点での完了条件（Step 1.5の明確化で得た合意内容を反映）
@@ -145,7 +145,7 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 確認すべき点:
 - Context（Why）: 解決したい課題が正確に記述されているか
-- Users: 誰が使うかが明確か（役割・技術レベル・文脈）
+- Who: 誰が使うかが明確か（役割・技術レベル・文脈）
 - Goal: 達成したいアウトカムが正確に表現されているか
 - Use Cases: Goalを実現する具体的なシナリオが記述されているか
 - Acceptance Criteria: ビジネス視点での完了条件が全Goalをカバーしているか

@@ -6,7 +6,7 @@
 
 | スキル | 呼び出し方 | 役割 | 自動移行 |
 |--------|-----------|------|----------|
-| **arc-specifying** | `/arc-specifying` | 意図（Why/Users/What/Use Cases/Acceptance Criteria/Constraints/Domain Model）を明確化し、Specを作成する | なし（人間ゲートで停止） |
+| **arc-specifying** | `/arc-specifying` | 意図（Why/Who/What/Use Cases/Acceptance Criteria/Constraints/Domain Model）を明確化し、Specを作成する | なし（人間ゲートで停止） |
 | **arc-designing** | `/arc-designing` | HOWを設計する。実現性確認・スコープ定義・ADR策定を行う | なし（人間ゲートで停止） |
 | **arc-planning** | `/arc-planning` | SpecとDesignをTDDタスクに分解し、自律FBループで品質確認後に投稿する | arc-implementing へ自動移行 |
 | **arc-implementing** | `/arc-implementing` | TDD（Red-Green）でタスクを自律実装し、専門レビューエージェントのFBループ後にPRを作成する | なし（PR作成前に人間ゲート） |
@@ -67,7 +67,7 @@ flowchart TD
     subgraph S["📋 Specifying — 意図を明確にする"]
         direction TB
         s1["Why: なぜ必要か"]
-        s6["Users: 誰が使うか（役割・技術レベル・文脈）"]
+        s6["Who: 誰が使うか（役割・技術レベル・文脈）"]
         s2["What: 何を達成するか"]
         s7["Use Cases: どんなシナリオで利用するか"]
         s3["Acceptance Criteria: ビジネス視点での完了条件"]
@@ -139,7 +139,7 @@ flowchart TD
     end
 
     HG1{{"👤 人間ゲート\nSpec承認"}}
-    GH_spec[("<!-- arc:spec -->\n意図のみ\nWhy / Users / What\nUse Cases\nAcceptance Criteria\nConstraints / Domain Model")]
+    GH_spec[("<!-- arc:spec -->\n意図のみ\nWhy / Who / What\nUse Cases\nAcceptance Criteria\nConstraints / Domain Model")]
 
     %% ─────────────────────────────
     %% arc-designing
