@@ -1,20 +1,20 @@
 ---
-name: arc-investigating
-description: Autonomously investigates the technical feasibility of the spec for the current branch. Extracts the issue number from the branch name, reads the spec from the Issue comment, runs parallel investigation agents (dependency and conflict analysis), and posts findings as an Issue comment. Use after reviewing and approving the spec from /arc-specifying. Part of the Arc SDLC workflow.
+name: arc-designing
+description: Autonomously designs the HOW for the current spec — feasibility check, overall design, scope definition, implementation constraints, and ADR. Extracts the issue number from the branch name, reads the spec from the Issue comment, runs parallel investigation agents (dependency and conflict analysis), and posts the design as an Issue comment. Use after reviewing and approving the spec from /arc-specifying. Part of the Arc SDLC workflow.
 user_invocable: true
 ---
 
-# Arc Investigating
+# Arc Designing
 
-**役割: 意図（Spec）を現実と照合する**
+**役割: 意図（Spec）をHOWに変換する**
 
-arc-specifyingで「実現したいこと（意図）」が確定した後、このフェーズでその意図を現実の技術的制約と照合する。
+arc-specifyingで「実現したいこと（意図）」が確定した後、このフェーズでその意図を実現するための設計を行う。実現性の確認・全体設計・スコープ定義・実装制約・ADRを策定する。
 
 **重要な原則: 意図は変えない。アプローチだけを調整する。**
 
 調査の結果「実現困難」と判明した場合、やりたいことを諦めるのではなく、**同じ意図を達成できる別のアプローチ**を提案する。Specに戻って修正するのは「アプローチ（ADR）」であり、「Goal/AC/Why」ではない。
 
-現在のブランチに対応するspecをIssueコメントから読み取り、技術的実現性を自律調査して結果をIssueコメントに投稿する。
+現在のブランチに対応するspecをIssueコメントから読み取り、設計結果をIssueコメントに投稿する。
 
 ## Workflow
 
@@ -73,7 +73,7 @@ Phase 2cの後、全エージェントの結果を照合し、依然として`�
 
 ユーザーの回答を踏まえて該当項目の判定を更新し、Step 3へ進む。
 
-### Step 3: 調査結果の統合と評価
+### Step 3: 調査結果の統合と実現性評価
 
 全エージェントの結果を統合し、実現性を3段階で評価：
 
@@ -108,9 +108,9 @@ Phase 2cの後、全エージェントの結果を照合し、依然として`�
     -X PATCH -f body="<ADRセクションを更新した全文>"
   ```
 
-  更新後、**「specのADRセクションに調査結果を反映しました。内容を確認・修正後、`/arc-investigating` を再実行してください」** と案内して終了する（Step 4以降は実行しない）。
+  更新後、**「specのADRセクションに調査結果を反映しました。内容を確認・修正後、`/arc-designing` を再実行してください」** と案内して終了する（Step 4以降は実行しない）。
 
-### Step 4: Phaseスコープ評価とIssue作成
+### Step 4: スコープ定義とPhase分け
 
 SpecのGoalと調査結果を照合し、今回実装するスコープ（Phase 1）と後続フェーズ（Phase 2+）に分類する。
 
@@ -140,20 +140,20 @@ EOF
 
 作成したIssue番号とURLを記録し、Step 5のコメントに含める。延期項目がない場合はこのステップをスキップする。
 
-### Step 5: 調査結果をIssueコメントに投稿
+### Step 5: 設計結果をIssueコメントに投稿
 
-既存の `<!-- arc:investigation -->` コメントがある場合は更新し、なければ新規投稿する：
+既存の `<!-- arc:design -->` コメントがある場合は更新し、なければ新規投稿する：
 
 ```bash
 COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:investigation -->"))][0] | .id')
+  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .id')
 
 BODY="$(cat <<'EOF'
-<!-- arc:investigation -->
-## Feasibility Investigation
+<!-- arc:design -->
+## Design
 
-**判定**: 実現可能 / 条件付き / 実現困難
-**調査日**: YYYY-MM-DD
+**実現性**: 実現可能 / 条件付き / 実現困難
+**設計日**: YYYY-MM-DD
 
 ### 依存関係・統合（Agent A）
 [Agent Aの調査結果サマリー]
@@ -164,7 +164,7 @@ BODY="$(cat <<'EOF'
 ### Web調査・外部情報（Agent C）
 [Agent Cの調査結果サマリー / または「スキップ（ローカル調査で十分と判断）」]
 
-### 結論
+### 実現性評価
 [なぜこの判定か、具体的な理由]
 
 ### 対応が必要な事項（条件付きの場合）
@@ -179,7 +179,7 @@ BODY="$(cat <<'EOF'
 
 ### ADR（Architecture Decision Record）
 
-调査結果を踏まえた技術選択の記録。実現性が確認できたアプローチを採用する。
+設計結果を踏まえた技術選択の記録。
 
 **採用するアプローチ**:
 [specの意図を実現するための具体的な実装方針。依存ライブラリ・パターン・アーキテクチャを明記]
@@ -191,9 +191,10 @@ BODY="$(cat <<'EOF'
 **トレードオフ・リスク**:
 - [このアプローチを選んだことで生じる制約や将来への影響]
 
-### Phase分け
-**Phase 1（今回）**: [今回実装するGoalの一覧]
-**Phase 2以降**: なし / #NNN [タイトル]（作成したIssueのURL）
+### スコープ（今回実装する範囲）
+
+**In Scope（Phase 1で実装）**: [今回実装するGoalの一覧]
+**Out of Scope（Phase 2以降）**: なし / #NNN [タイトル]（作成したIssueのURL）
 EOF
 )"
 
@@ -212,15 +213,16 @@ fi
 
 ```bash
 git add docs/
-git commit -m "spec: update docs with feasibility constraints for issue #NNN"
+git commit -m "spec: update docs with design constraints for issue #NNN"
 ```
 
 ### Step 7: 案内
 
-IssueのURLを表示し、**"調査結果を確認し方向性を決定したら、`/arc-planning` を実行してください"** と案内する。
+IssueのURLを表示し、**"設計結果を確認し方向性を決定したら、`/arc-planning` を実行してください"** と案内する。
 
 ## Notes
 
 - 実現困難と判断した場合でも、必ず代替案を提示して前に進めるようにする
 - 技術的な判断に迷う場合は、よりシンプルなアプローチを優先する
 - specのファイルは存在しない（Issueコメントが正とする）
+- スコープ（In/Out of Scope）はこのフェーズで定義する（Specには含まれない）

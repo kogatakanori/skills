@@ -1,6 +1,6 @@
 ---
 name: arc-specifying
-description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, runs spec-validator to clarify Why, What, Constraints, and Domain Model one question at a time. Then runs parallel investigation agents and creates a spec built on clear, confirmed intent — without Scope, frameworks, or ADR (those belong to arc-investigating). Fully stops after posting and waits for human approval. Part of the Arc SDLC workflow.
+description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, runs spec-validator to clarify Why, What, Constraints, and Domain Model one question at a time. Then runs parallel investigation agents and creates a spec built on clear, confirmed intent — without Scope, frameworks, or ADR (those belong to arc-designing). Fully stops after posting and waits for human approval. Part of the Arc SDLC workflow.
 user_invocable: true
 ---
 
@@ -109,7 +109,7 @@ Step 1.5の明確化されたコンテキスト＋Step 2の調査結果を統合
 - **Constraints**: 守らなければならないビジネスルール・不変条件（予算・法律・ユーザー体験など）
 - **Domain Model**: この機能で登場するエンティティ・概念の定義（調査結果から既存用語との整合を確認）
 
-**Specに含めないもの**: スコープ（In/Out of Scope）・実装アプローチ・技術選択 → これらはarc-investigatingで決定する
+**Specに含めないもの**: スコープ（In/Out of Scope）・実装アプローチ・技術選択 → これらはarc-designingで決定する
 
 作成したSpecをIssueにGitHubコメントとして投稿する：
 
@@ -146,11 +146,11 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 - Constraints: 守らなければならないビジネスルール・不変条件が網羅されているか
 - Domain Model: 機能で使う用語・概念が明確に定義されているか
 
-承認する場合: `/arc-investigating` を実行してください
+承認する場合: `/arc-designing` を実行してください
 修正が必要な場合: 会話でAIに修正箇所を伝えてください（Spec修正フローが起動します）
 ```
 
-**⚠️ 重要: このステップでワークフローは必ず終了する。ユーザーの明示的な指示なしに `/arc-investigating` を自動実行してはならない。**
+**⚠️ 重要: このステップでワークフローは必ず終了する。ユーザーの明示的な指示なしに `/arc-designing` を自動実行してはならない。**
 
 ## Spec修正フロー（会話でアドホックに起動）
 

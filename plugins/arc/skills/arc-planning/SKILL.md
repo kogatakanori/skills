@@ -27,10 +27,10 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body')
 INVESTIGATION=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:investigation -->"))][0] | .body')
+  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .body')
 ```
 
-`<!-- arc:investigation -->` コメントが存在しない場合は、`/arc-investigating` を先に実行するよう案内して終了。
+`<!-- arc:design -->` コメントが存在しない場合は、`/arc-designing` を先に実行するよう案内して終了。
 
 ### Step 2: 実装対象コードの詳細調査
 

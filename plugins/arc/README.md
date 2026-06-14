@@ -23,7 +23,7 @@ GitHub Issue
       │
       │ ← Issueのspecコメントを確認・承認
       ▼
-/arc-investigating
+/arc-designing
   ├─ dependency-analyst     ┐
   └─ conflict-analyst       ┘ 並列調査
       │
@@ -64,7 +64,7 @@ GitHub Issue
 | 種別 | 保存先 | 管理方法 |
 |------|--------|---------|
 | Spec（Why・ADR） | GitHub Issue コメント | `<!-- arc:spec -->` で識別 |
-| 実現性調査結果 | GitHub Issue コメント | `<!-- arc:investigation -->` で識別 |
+| 実現性調査結果 | GitHub Issue コメント | `<!-- arc:design -->` で識別 |
 | Taskリスト | GitHub Issue コメント | `<!-- arc:tasks -->` で識別 |
 | ドキュメント（What） | `docs/*.md` | 常に最新版を上書き保存 |
 
@@ -78,9 +78,9 @@ GitHub Issue番号を受け取り、featureブランチを作成してspecをIss
 - **codebase-analyst** と **architecture-analyst** を並列起動してコードベースを調査
 - specを `<!-- arc:spec -->` 識別子付きでIssueコメントとして投稿
 - `docs/<feature-name>.md` を生成（何を・どう使うか）
-- 完了後、specコメントの確認を促して `/arc-investigating` へ案内
+- 完了後、specコメントの確認を促して `/arc-designing` へ案内
 
-### `/arc-investigating`
+### `/arc-designing`
 
 Issueのspecコメントを読み取り技術的実現性を調査し、調査結果をIssueコメントに投稿する。
 
@@ -90,7 +90,7 @@ Issueのspecコメントを読み取り技術的実現性を調査し、調査�
   - `実現可能` — 制約なし、そのまま進める
   - `条件付き` — 特定の対応が必要だが実現できる
   - `実現困難` — 根本的な問題あり、代替案を提示してspecコメントの修正を促す
-- 調査結果を `<!-- arc:investigation -->` 識別子付きでIssueコメントとして投稿
+- 調査結果を `<!-- arc:design -->` 識別子付きでIssueコメントとして投稿
 - 完了後、方向性の確認を促して `/arc-planning` へ案内
 
 ### `/arc-planning`
@@ -151,8 +151,8 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 |---|---|---|
 | codebase-analyst | 類似機能・踏襲すべきパターンを調査 | arc-specifying |
 | architecture-analyst | アーキテクチャ制約・テスト基盤を調査 | arc-specifying |
-| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性を確認 | arc-investigating |
-| conflict-analyst | 既存コードとの競合・破壊的変更を調査 | arc-investigating |
+| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性を確認 | arc-designing |
+| conflict-analyst | 既存コードとの競合・破壊的変更を調査 | arc-designing |
 | implementation-analyst | 実装対象コードの詳細調査 | arc-planning |
 | security-reviewer | セキュリティレビュー | arc-implementing |
 | architecture-reviewer | アーキテクチャレビュー | arc-implementing |
@@ -296,7 +296,7 @@ arcはテンプレートファイル（`templates/`）やエージェント定�
 # → Issueのspecコメントを確認して承認
 
 # 2. 技術的実現性を調査（結果もIssueコメントに投稿）
-/arc-investigating
+/arc-designing
 
 # → 調査結果を確認し方向性を決定
 

@@ -1,6 +1,6 @@
 ---
 name: spec-validator
-description: Clarifies pure intent — Why, What, Constraints, and Domain Model — through a design question tree. Investigates the codebase to answer questions autonomously where possible. Surfaces remaining questions one at a time, each with a recommended answer. Does not touch How, Scope, or ADR — those belong to arc-investigating.
+description: Clarifies pure intent — Why, What, Constraints, and Domain Model — through a design question tree. Investigates the codebase to answer questions autonomously where possible. Surfaces remaining questions one at a time, each with a recommended answer. Does not touch How, Scope, or ADR — those belong to arc-designing.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -29,10 +29,10 @@ model: opus
 - **Domain Model**: この機能で使う用語・概念の定義
 
 **あなたが扱わない領域**:
-- **Scope（境界線）** → arc-investigating で技術的に決める
-- **How（実装アプローチ）** → arc-investigating で決める
-- **ADR（技術選択・代替案比較）** → arc-investigating で決める
-- **実現性（できるかどうか）** → arc-investigating の担当
+- **Scope（境界線）** → arc-designing で技術的に決める
+- **How（実装アプローチ）** → arc-designing で決める
+- **ADR（技術選択・代替案比較）** → arc-designing で決める
+- **実現性（できるかどうか）** → arc-designing の担当
 
 **この分離が重要な理由**: How・Scope・実現性を先に考えると、本当に実現したかったことが妥協される。まずWhy/What/Constraints/Domain Modelを純粋に言語化してから、「では現実にどう実現するか」を別フェーズで考える。
 

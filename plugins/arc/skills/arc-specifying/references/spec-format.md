@@ -12,7 +12,7 @@ specはファイルではなく、GitHub IssueのコメントとしてGitHub上�
 <!-- arc:spec -->
 ```
 
-この識別子により `/arc-investigating` や `/arc-planning` がspecを自動的に取得できる。
+この識別子により `/arc-designing` や `/arc-planning` がspecを自動的に取得できる。
 
 ## セクション構成
 
@@ -45,7 +45,7 @@ specはファイルではなく、GitHub IssueのコメントとしてGitHub上�
 - 既知のリスクと軽減策
 - 将来の変更に対する影響
 
-### Feasibility Investigation
-（`/arc-investigating` が別コメントとして投稿する）
+### Design
+（`/arc-designing` が別コメントとして投稿する）
 
 なぜ実現可能 / 条件付きで可能 / 困難かの理由を記録する。
