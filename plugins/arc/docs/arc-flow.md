@@ -59,48 +59,55 @@
 ## フェーズ概要
 
 ```mermaid
-flowchart LR
-    Issue[["🎫 Issue\n（要望・課題）"]]
+flowchart TD
+    Issue[["🎫 Issue（要望・課題）"]]
 
-    subgraph S["📋 Specifying\n意図を明確にする"]
-        s1["Why\nなぜ必要か"]
-        s2["What\n何を達成するか"]
-        s3["Acceptance Criteria\nビジネス視点での完了条件"]
-        s4["Constraints\nビジネス制約"]
-        s5["Domain Model\nことばの定義"]
-    end
-
-    subgraph D["🔧 Designing\nHOWを設計する"]
-        d1["実現性確認"]
-        d2["スコープ定義"]
-        d3["ADR策定"]
-    end
-
-    subgraph P["📝 Planning\nタスクに分解する"]
-        p1["TDDタスク分解\n[test]→[impl]"]
-        p2["Goal→タスク\nトレーサビリティ"]
-    end
-
-    subgraph I["⚙️ Implementing\n自律実装する"]
-        i1["Red-Green\nTDDサイクル"]
-        i2["レビューFB\nエージェント群"]
-        i3["最終横断\nレビュー"]
-        i4["PR作成"]
+    subgraph S["📋 Specifying — 意図を明確にする"]
+        direction TB
+        s1["Why: なぜ必要か"]
+        s2["What: 何を達成するか"]
+        s3["Acceptance Criteria: ビジネス視点での完了条件"]
+        s4["Constraints: ビジネス制約（予算・法律・UXなど）"]
+        s5["Domain Model: ことばの定義"]
     end
 
     HG1{{"👤 Spec承認"}}
-    HG2{{"👤 方向性確認"}}
-    HG3{{"👤 カバレッジ確認"}}
-    HG4{{"👤 PR承認"}}
-    PR[["🔀 Pull Request"]]
 
-    Issue --> S --> HG1 --> D --> HG2 --> P -->|"🤖 自動"| I
-    I --> HG3 --> HG4 --> PR
+    subgraph D["🔧 Designing — HOWを設計する"]
+        direction TB
+        d1["実現性確認"]
+        d2["スコープ定義（In/Out of Scope）"]
+        d3["ADR策定（技術選択・代替案比較）"]
+    end
+
+    HG2{{"👤 方向性確認"}}
+
+    subgraph P["📝 Planning — タスクに分解する"]
+        direction TB
+        p1["TDDタスク分解（[test] → [impl]）"]
+        p2["Goal → タスク トレーサビリティ確認"]
+    end
+
+    AUTO(["🤖 自動移行"])
+
+    subgraph I["⚙️ Implementing — 自律実装する"]
+        direction TB
+        i1["Red-Green TDDサイクル"]
+        i2["タスクごとのレビューFB（エージェント群）"]
+        i3["最終横断レビュー（Step 2.5）"]
+    end
+
+    HG3{{"👤 カバレッジ確認\n（CRITICAL/HIGH のみ）"}}
+    HG4{{"👤 PR作成承認"}}
+    PR[["🔀 Pull Request → Issue自動クローズ"]]
+
+    Issue --> S --> HG1 --> D --> HG2 --> P --> AUTO --> I --> HG3 --> HG4 --> PR
 
     style HG1 fill:#ff9900,color:#000
     style HG2 fill:#ff9900,color:#000
     style HG3 fill:#ff9900,color:#000
     style HG4 fill:#ff9900,color:#000
+    style AUTO fill:#2da44e,color:#fff
 ```
 
 > **人間が関与するのは4箇所のみ。** それ以外はAIが自律的に判断・実行・修正する。
@@ -127,7 +134,7 @@ flowchart TD
     end
 
     HG1{{"👤 人間ゲート\nSpec承認"}}
-    GH_spec[("<!-- arc:spec -->\n意図のみ\nWhy/What/AC\nConstraints\nDomain Model")]
+    GH_spec[("<!-- arc:spec -->\n意図のみ\nWhy / What\nAcceptance Criteria\nConstraints / Domain Model")]
 
     %% ─────────────────────────────
     %% arc-designing
@@ -238,99 +245,93 @@ flowchart TD
 ## 2. エージェントマップ（どのスキルがどのエージェントをいつ起動するか）
 
 ```mermaid
-flowchart LR
+flowchart TD
     %% ─────────────────────────────
-    %% arc-specifying のエージェント
+    %% arc-specifying
     %% ─────────────────────────────
     subgraph SPEC["📋 arc-specifying"]
-        S15["Step 1.5\n意図の明確化"]
-        S2["Step 2\nコードベース調査"]
+        direction TB
+        S15["Step 1.5 意図の明確化"]
+        S2["Step 2 コードベース調査"]
+        sv["spec-validator\n設計ツリーのQ&A生成\nコードベース自律調査"]
+        cb["codebase-analyst\n類似機能・パターン調査"]
+        aa["architecture-analyst\nアーキテクチャ制約・docs調査"]
+        S15 -->|"常時"| sv
+        S2 -->|"常時 並列"| cb
+        S2 -->|"常時 並列"| aa
     end
-
-    subgraph SPEC_AGENTS["エージェント（arc-specifying）"]
-        sv["spec-validator\n常時\n設計ツリーのQ&A生成\nコードベース自律調査"]
-        cb["codebase-analyst\n常時\n類似機能・パターン調査"]
-        aa["architecture-analyst\n常時\nアーキテクチャ制約・docs調査"]
-    end
-
-    S15 -->|"Explore起動"| sv
-    S2 -->|"Explore 並列起動"| cb
-    S2 -->|"Explore 並列起動"| aa
 
     %% ─────────────────────────────
-    %% arc-designing のエージェント
+    %% arc-designing
     %% ─────────────────────────────
     subgraph DESIGN["🔧 arc-designing"]
-        D2a["Phase 2a\nローカル調査"]
-        D2c["Phase 2c\nWeb調査"]
+        direction TB
+        D2a["Phase 2a ローカル調査"]
+        D2c["Phase 2c Web調査"]
+        dep["dependency-analyst\nライブラリ・API存在確認"]
+        con["conflict-analyst\n既存コード競合・破壊的変更"]
+        web["web-research-analyst\n不明項目がある場合のみ"]
+        D2a -->|"常時 並列"| dep
+        D2a -->|"常時 並列"| con
+        D2c -->|"🔶 条件付き"| web
     end
-
-    subgraph DESIGN_AGENTS["エージェント（arc-designing）"]
-        dep["dependency-analyst\n常時\nライブラリ・API存在確認"]
-        con["conflict-analyst\n常時\n既存コード競合・破壊的変更"]
-        web["web-research-analyst\n条件付き\n不明項目がある場合のみ"]
-    end
-
-    D2a -->|"Explore 並列起動"| dep
-    D2a -->|"Explore 並列起動"| con
-    D2c -->|"Explore 起動\n不明項目あり時"| web
 
     %% ─────────────────────────────
-    %% arc-planning のエージェント
+    %% arc-planning
     %% ─────────────────────────────
     subgraph PLAN["📝 arc-planning"]
-        P2["Step 2\n実装詳細調査"]
+        direction TB
+        P2["Step 2 実装詳細調査"]
+        ia["implementation-analyst\n変更ファイル・テスト要件を特定"]
+        P2 -->|"常時"| ia
     end
-
-    subgraph PLAN_AGENTS["エージェント（arc-planning）"]
-        ia["implementation-analyst\n常時\n変更ファイル・テスト要件を特定"]
-    end
-
-    P2 -->|"Explore 起動"| ia
 
     %% ─────────────────────────────
-    %% arc-implementing のエージェント
+    %% arc-implementing ⑥（タスクごと）
     %% ─────────────────────────────
-    subgraph IMPL["⚙️ arc-implementing"]
-        I6["⑥ タスクごとのレビュー"]
-        I25A["Step 2.5-A\n横断レビュー"]
-        I25B["Step 2.5-B\nカバレッジ"]
+    subgraph IMPL6["⚙️ arc-implementing ⑥（タスクごと）"]
+        direction TB
+        I6["⑥ レビュー起動"]
+        qr["quality-reviewer\n命名・責務・重複・複雑度"]
+        al["architecture-linter\nTDD遵守 / レイヤー境界\nパッケージ制限 / ADRルール"]
+        sec["security-reviewer\nauth / token / sql / api 等"]
+        ar["architecture-reviewer\n変更3件以上 or 新規2件以上\nservice/domain/infra 等"]
+        ci["cicd-reviewer\n.github/ / Dockerfile\nmigration / package.json 等"]
+        I6 -->|"常時"| qr
+        I6 -->|"常時"| al
+        I6 -->|"🔶 条件付き"| sec
+        I6 -->|"🔶 条件付き"| ar
+        I6 -->|"🔶 条件付き"| ci
     end
 
-    subgraph IMPL_ALWAYS["常時起動（arc-implementing）"]
-        qr["quality-reviewer\n命名・責務・重複\nテスト適切性・複雑度"]
-        al["architecture-linter\nTDD遵守（Rule1）\nレイヤー境界（Rule2）\nパッケージ制限（Rule3）\nADRルール（Rule4）"]
+    %% ─────────────────────────────
+    %% arc-implementing Step 2.5（最終横断）
+    %% ─────────────────────────────
+    subgraph IMPL25["⚙️ arc-implementing Step 2.5（最終横断）"]
+        direction TB
+        I25A["2.5-A 横断レビュー"]
+        I25B["2.5-B カバレッジチェック"]
+        qr2["quality-reviewer"]
+        al2["architecture-linter"]
+        sec2["security-reviewer"]
+        ar2["architecture-reviewer"]
+        ci2["cicd-reviewer"]
+        scr["spec-coverage-reviewer\nGoal / Acceptance Criteria\n/ Constraints のカバレッジ検証"]
+        I25A -->|"常時"| qr2
+        I25A -->|"常時"| al2
+        I25A -->|"🔶 条件付き"| sec2
+        I25A -->|"🔶 条件付き"| ar2
+        I25A -->|"🔶 条件付き"| ci2
+        I25B -->|"常時"| scr
     end
 
-    subgraph IMPL_COND["条件付き起動（arc-implementing）"]
-        sec["security-reviewer\nauth / token / sql\npassword / api 等を含む場合"]
-        ar["architecture-reviewer\n変更3件以上 or\n新規2件以上 or\nservice/domain/infra等を含む場合"]
-        ci["cicd-reviewer\n.github/ / Dockerfile\nmigration / package.json 等を含む場合"]
-    end
+    SPEC --> DESIGN --> PLAN --> IMPL6 --> IMPL25
 
-    subgraph IMPL_FINAL["最終レビュー（Step 2.5）"]
-        scr["spec-coverage-reviewer\n常時\nGoal/Acceptance Criteria/Constraints\nのテストカバレッジ検証"]
-    end
-
-    I6 -->|"Explore 並列起動"| qr
-    I6 -->|"Explore 並列起動"| al
-    I6 -->|"Explore 条件起動"| sec
-    I6 -->|"Explore 条件起動"| ar
-    I6 -->|"Explore 条件起動"| ci
-    I25A -->|"Explore 並列起動"| qr
-    I25A -->|"Explore 並列起動"| al
-    I25A -->|"Explore 条件起動"| sec
-    I25A -->|"Explore 条件起動"| ar
-    I25A -->|"Explore 条件起動"| ci
-    I25B -->|"Explore 起動"| scr
-
-    %% スタイル
-    style SPEC_AGENTS fill:#e8f4fd
-    style DESIGN_AGENTS fill:#e8f4fd
-    style PLAN_AGENTS fill:#e8f4fd
-    style IMPL_ALWAYS fill:#e8f4fd
-    style IMPL_COND fill:#fff3cd
-    style IMPL_FINAL fill:#d4edda
+    style SPEC fill:#f0f7ff
+    style DESIGN fill:#f0f7ff
+    style PLAN fill:#f0f7ff
+    style IMPL6 fill:#f0f7ff
+    style IMPL25 fill:#f0f7ff
 ```
 
 ---
@@ -338,44 +339,56 @@ flowchart LR
 ## 3. FBループ構造（品質担保の仕組み）
 
 ```mermaid
-flowchart LR
-    subgraph SPEC_FB["arc-specifying の FB"]
-        sv2["spec-validator\n（Q&A）"]
-        HU1["👤 回答"]
-        sv2 <-->|"1問ずつ"| HU1
+flowchart TD
+    subgraph SPEC_FB["📋 arc-specifying の FB"]
+        direction TB
+        sv2["spec-validator（設計ツリー展開・調査）"]
+        HU1["👤 回答（推奨回答付き・1問ずつ）"]
+        sv2 -->|"質問を提示"| HU1
+        HU1 -->|"回答を受けて次の質問"| sv2
     end
 
-    subgraph DESIGN_FB["arc-designing の FB"]
-        inv["調査エージェント群"]
-        eval["実現性評価\nADR策定"]
+    subgraph DESIGN_FB["🔧 arc-designing の FB"]
+        direction TB
+        inv["調査エージェント群（dependency / conflict / web）"]
+        eval["実現性評価・ADR策定"]
+        alt["Specに代替案をフィードバック"]
         inv --> eval
-        eval -->|"実現困難"| spec_update["Specに代替案を\nフィードバック"]
-        spec_update -->|"修正後\n再実行"| inv
+        eval -->|"実現困難"| alt
+        alt -->|"修正後 再実行"| inv
     end
 
-    subgraph PLAN_FB["arc-planning の FB（自律）"]
-        task["タスク分解"]
-        review["自律レビュー\n最大3回"]
-        task --> review -->|"問題あり"| task
-        review -->|"OK"| post["投稿"]
+    subgraph PLAN_FB["📝 arc-planning の FB（自律）"]
+        direction TB
+        task["TDDタスク分解"]
+        review["自律レビュー（最大3回）\nTDD対応 / Specカバレッジ\n粒度 / 依存順序 / インフラ"]
+        task --> review
+        review -->|"問題あり → 修正"| task
+        review -->|"OK"| post["タスクコメント投稿"]
     end
 
-    subgraph IMPL_FB["arc-implementing の FB（タスクごと）"]
-        red["Red\nテスト失敗"]
-        green["Green\nテストパス"]
-        agents["レビューエージェント群\n（最大5並列）"]
-        fix["CRITICAL/HIGH修正"]
-        red --> green --> agents --> fix -->|"修正後\n再テスト"| green
-        fix -->|"OK"| commit["コミット"]
+    subgraph IMPL_FB["⚙️ arc-implementing の FB（タスクごと）"]
+        direction TB
+        red["① テストを書く（Red）"]
+        green["④ 実装コードを書く（Green）"]
+        agents["⑥ レビューエージェント群\nquality / architecture-linter\n+ 条件付き3エージェント"]
+        fix["⑦ CRITICAL/HIGH を修正"]
+        commit["⑨ コミット → 次タスクへ"]
+        red --> green --> agents --> fix
+        fix -->|"修正後 再テスト"| green
+        fix --> commit
+        commit -->|"未完了タスクあり"| red
     end
 
-    subgraph FINAL_FB["最終 FB（Step 2.5）"]
-        cross["横断レビュー"]
-        cov["カバレッジチェック"]
-        HU2["👤 カバレッジ判断\nCRITICAL/HIGH のみ"]
+    subgraph FINAL_FB["🔍 最終 FB（Step 2.5）"]
+        direction TB
+        cross["2.5-A 横断レビュー（全タスクの累積diff）"]
+        cov["2.5-B spec-coverage-reviewer\nGoal / Acceptance Criteria / Constraints"]
+        HU2["👤 カバレッジ確認（CRITICAL/HIGH のみ）"]
         cross --> HU2
         cov --> HU2
-        HU2 -->|"追加テスト"| red
+        HU2 -->|"テスト追加"| addtest["テスト実装 → GREEN確認 → コミット"]
+        HU2 -->|"スキップ"| pr["PR作成へ"]
     end
 
     SPEC_FB --> DESIGN_FB --> PLAN_FB --> IMPL_FB --> FINAL_FB
