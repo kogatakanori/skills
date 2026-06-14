@@ -23,7 +23,7 @@ IssueのtasksコメントのタスクをTDDで全て自律実装し、専門レ�
 
 3. `ISSUE_URL`: `https://github.com/${REPO}/issues/${ISSUE_NUM}` として構築する（bashコマンド不要）。
 
-**タスク・Specの取得**:
+**タスク・Spec・Designの取得**:
 
 ```bash
 TASKS_COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
@@ -32,10 +32,12 @@ TASKS_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:tasks -->"))][0] | .body')
 SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body')
+DESIGN_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
+  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .body')
 ```
 
 tasksコメントが見つからない場合は `/arc-planning` を先に実行するよう案内して終了。
-specとdocsも読み込んで実装の文脈として利用する。
+spec（意図）・design（ADR・スコープ）・docsも読み込んで実装の文脈として利用する。
 
 ### Step 2: TDD実装ループ（全タスク完了まで繰り返す）
 
@@ -101,9 +103,9 @@ NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
 起動対象と判定したエージェントファイルを Read し、対応するプレースホルダーを置換して**同時に**起動する：
 
 - **`../../agents/quality-reviewer.md`** (常時): `[git diff HEAD の出力]` を置換
-- **`../../agents/architecture-linter.md`** (常時): `[git diff HEAD の出力]` と `[specのADRセクション（investigation結果）]` を置換
+- **`../../agents/architecture-linter.md`** (常時): `[git diff HEAD の出力]` と `[designコメントのADRセクション]` を置換（`DESIGN_CONTENT`の`### ADR`セクション部分を渡す）
 - **`../../agents/security-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
-- **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[specのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換
+- **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[designコメントのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換（ADRは`DESIGN_CONTENT`から）
 - **`../../agents/cicd-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
 
 **⑦ 指摘の統合と修正**
@@ -166,6 +168,7 @@ FULL_NEW_FILES=$(git diff "${BASE}" --name-only --diff-filter=A)
 
 各エージェントのプレースホルダーは以下の通り置換する：
 - `[git diff HEAD の出力]` → `FULL_DIFF` の内容（**PRブランチ全体のdiff**。エージェント起動時の指示にも「このdiffはPR全体の累積差分です」と明記してコンテキストを正確に伝える）
+- `[designコメントのADRセクション]` → `DESIGN_CONTENT` の `### ADR` セクション部分（Step 1で取得済み）
 - その他のプレースホルダーは⑥と同様
 
 **2.5-B: Specカバレッジチェック（常に実行）**
@@ -201,7 +204,7 @@ spec-coverage-reviewerのCRITICAL/HIGH指摘がある場合、**自動修正せ�
 git push -u origin $(git branch --show-current)
 ```
 
-specのContext/Goal/ADRとdocsの変更点からPR説明を生成する：
+specのContext/GoalとdesignのADR（`DESIGN_CONTENT`から）とdocsの変更点からPR説明を生成する：
 
 ```markdown
 ## Summary
