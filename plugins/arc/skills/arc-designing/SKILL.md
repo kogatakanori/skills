@@ -38,19 +38,35 @@ SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
 
 `SPEC_CONTENT` が空の場合は、`/arc-specifying <N>` を先に実行するよう案内して終了。
 
+### Step 1.5: design-clarifier【Phase 1】変更タイプの判断
+
+`../../agents/design-clarifier.md` を Read し、`[specの内容]` を SPEC_CONTENT で置換し、`[調査結果の要約]` は**空のまま**にしてExploreエージェントを起動する。
+
+design-clarifierが以下を判断する：
+- **踏襲型**: 既存の設計・パターンを踏まえて機能を追加・拡張する
+- **変革型**: 既存の設計を大きく変更・置き換える、または全く新しい設計を導入する
+
+出力を受け取り `CHANGE_TYPE`（`踏襲型` / `変革型`）として記録する。
+
+判断が曖昧な場合はdesign-clarifierが1問生成するので、ユーザーに確認してからStep 2へ進む。
+
+**⚠️ 仮にCHANGE_TYPEの判断が誤っていても、Step 2.5のQ&Aで修正できる。ここで完璧を求めない。**
+
 ### Step 2: 並列技術調査
 
-#### Phase 2a: ローカル調査（常に実行）
+#### Phase 2a: ローカル調査（CHANGE_TYPEに応じて構成変更）
 
-以下4エージェントのファイルを Read し、`[specの全文]` を実際のspec内容で置換して**同時に**起動する：
+以下エージェントのファイルを Read し、プレースホルダーを置換して**同時に**起動する：
 
-**Agent A（codebase-analyst）**: 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用）
+**Agent A（codebase-analyst）**: `[specの全文]` と `[変更タイプ]` を置換して起動。CHANGE_TYPEによって調査の焦点が変わる：
+- 踏襲型: 参考パターン・再利用可能なコンポーネントを調査
+- 変革型: 変更・置き換え対象の既存実装と影響範囲を特定
 
-**Agent B（architecture-analyst）**: アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用）
+**Agent B（architecture-analyst）**: `[specの全文]` を置換して起動（常に起動。アーキテクチャ制約・既存docs・テスト基盤を調査）
 
-**Agent C（dependency-analyst）**: ライブラリ・外部APIの存在・バージョン適合性を確認
+**Agent C（dependency-analyst）**: `[specの全文]` を置換して起動（常に起動。ライブラリ・外部APIの存在・バージョン適合性を確認）
 
-**Agent D（conflict-analyst）**: 既存コードとの競合・破壊的変更・パフォーマンス懸念を調査
+**Agent D（conflict-analyst）**: `[specの全文]` を置換して起動（常に起動。競合コード・破壊的変更・パフォーマンス懸念を調査。変革型では特に網羅的に）
 
 #### Phase 2b: Web調査クエリの生成
 
@@ -77,11 +93,11 @@ Phase 2cの後、全エージェントの結果を照合し、依然として`�
 
 ユーザーの回答を踏まえて該当項目の判定を更新し、Step 3へ進む。
 
-### Step 2.5: design-clarifierによる設計方針の明確化
+### Step 2.5: design-clarifier【Phase 2】HOW判断のQ&A
 
-Phase 2aの調査結果をまとめ、`../../agents/design-clarifier.md` を Read する。以下のプレースホルダーを置換してExploreエージェントを起動する：
+`../../agents/design-clarifier.md` を Read する。以下のプレースホルダーを置換してExploreエージェントを起動する：
 - `[specの内容]` → SPEC_CONTENTの内容
-- `[調査結果の要約]` → Phase 2a〜2dの全エージェント結果のサマリー（判明した制約・パターン・実現可能性の要点）
+- `[調査結果の要約]` → 「CHANGE_TYPE: 踏襲型/変革型」＋ Phase 2a〜2dの全エージェント結果のサマリー（判明した制約・パターン・実現可能性の要点）
 
 design-clarifierの出力を受け取ったら、以下のフォーマットで1問ずつ聞く：
 

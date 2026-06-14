@@ -20,7 +20,7 @@
 |-------------|--------|------|----------|
 | **spec-clarifier** | Opus | Why/Who/What/Use Cases/Constraints/Domain Modelの6軸で設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
 | **spec-reviewer** | Opus | 作成済みSpecを5観点でレビュー（完全性・ACテスト可能性・UC↔Goal整合・Constraints計測可能性・内部整合性）。CRITICALは人間確認、HIGHは自動修正 | Explore |
-| **design-clarifier** | Opus | 調査結果とSpecをもとに、アーキテクチャ・データモデル・統合方式・エラーハンドリング・テスト戦略のHOW判断を推奨回答付きQ&Aで確認する | Explore |
+| **design-clarifier** | Opus | Phase 1（Specのみ）: 踏襲型/変革型を判断し調査戦略を決定。Phase 2（調査結果後）: アーキテクチャ・データモデル・統合方式・テスト戦略のHOW判断をQ&Aで確認する | Explore |
 | **design-reviewer** | Opus | 作成済みDesignをSpecと照合し、Spec要件カバレッジ・トレーサビリティ完全性・Constraintガードレール・テスト戦略を検証する | Explore |
 | **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用） | Explore |
 | **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
@@ -280,8 +280,9 @@ flowchart TD
         dep["dependency-analyst\nライブラリ・API存在確認"]
         con["conflict-analyst\n既存コード競合・破壊的変更"]
         web["web-research-analyst\n不明項目がある場合のみ"]
-        D25["Step 2.5 設計方針Q&A"]
-        dc["design-clarifier\nアーキテクチャ・データモデル\n統合方式・テスト戦略のHOW判断"]
+        D15["Step 1.5 変更タイプ判断"]
+        D25["Step 2.5 HOW判断Q&A"]
+        dc["design-clarifier\nPhase 1: 踏襲型/変革型の判断\nPhase 2: アーキテクチャ・データモデル\n統合方式・テスト戦略のHOW判断"]
         D5b["Step 5-b 品質チェック"]
         drw["design-reviewer\nSpec要件カバレッジ\nトレーサビリティ完全性\nConstraintガードレール"]
         D2a -->|"常時 並列"| cb
@@ -289,6 +290,7 @@ flowchart TD
         D2a -->|"常時 並列"| dep
         D2a -->|"常時 並列"| con
         D2c -->|"🔶 条件付き"| web
+        D15 -->|"常時"| dc
         D25 -->|"常時"| dc
         D5b -->|"常時"| drw
     end
