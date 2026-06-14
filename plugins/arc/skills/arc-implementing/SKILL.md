@@ -101,7 +101,7 @@ NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
 起動対象と判定したエージェントファイルを Read し、対応するプレースホルダーを置換して**同時に**起動する：
 
 - **`../../agents/quality-reviewer.md`** (常時): `[git diff HEAD の出力]` を置換
-- **`../../agents/architecture-linter.md`** (常時): `[git diff HEAD の出力]`・`[specのConstraintsセクション]`・`[specのADRセクション（investigation結果）]` を置換
+- **`../../agents/architecture-linter.md`** (常時): `[git diff HEAD の出力]` と `[specのADRセクション（investigation結果）]` を置換
 - **`../../agents/security-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
 - **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[specのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換
 - **`../../agents/cicd-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
