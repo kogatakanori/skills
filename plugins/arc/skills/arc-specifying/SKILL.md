@@ -1,12 +1,14 @@
 ---
 name: arc-specifying
-description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, clarifies ambiguities via one-at-a-time questions before drafting. Runs parallel investigation agents, validates the spec with a self-review loop, posts as an Issue comment, and creates docs/ files. Fully stops after posting and waits for human approval. Part of the Arc SDLC workflow.
+description: Generates spec comment and docs from a GitHub Issue. Immediately after retrieving the issue, runs spec-validator to surface ambiguities and clarifies them one question at a time. Then runs parallel investigation agents and creates a spec built on clear, confirmed intent. Fully stops after posting and waits for human approval before any next phase. Part of the Arc SDLC workflow.
 user_invocable: true
 ---
 
 # Arc Specifying
 
 GitHub IssueからSpec（なぜ・意思決定）をIssueコメントとして投稿し、Docs（何を・最新仕様）を `docs/` に生成する。
+
+Specは全開発の土台。**最初に意図を明確にしてから書く**。
 
 ## Workflow
 
@@ -62,58 +64,44 @@ hookの内容：
    - `WorktreeCreate` hook が自動実行される
    - 現在のセッションがworktree内に切り替わる
 
-### Step 1.5: Issue内容の解釈と事前質問ループ
+### Step 1.5: spec-validatorによる意図の明確化
 
-Issueのタイトル・本文を即座に解釈し、**仕様作成に支障をきたす不明点・矛盾・漏れ**を検出する。
+Issue取得直後に `../../agents/spec-validator.md` を Read し、`[issueまたはspecの内容]` をIssueの全文（タイトル＋本文）で置換してExploreエージェントを起動する。
 
-**質問が必要な場合**（以下に該当する点があれば）：
-- 目的や成果が曖昧で複数の解釈が可能
-- 複数の要件が矛盾している（例：「高速」かつ「精度重視」で両立不可能な場合）
-- スコープが不明確（どこまでがこのIssueで対応するか）
-- 技術的な前提条件が書かれていない
+**spec-validatorの出力を受け取ったら、質問リストを1問ずつユーザーに聞く**：
 
-**質問ルール**：
-- **1回の返答につき質問は1問のみ**。複数の疑問点があっても最も重要なものから1問ずつ
-- 質問は「Yes/No」でなく、相手の意図・理由・優先度を引き出す開かれた問い
-- 前の回答を踏まえて次の質問を決める。回答が明確なら次の疑問点へ
-- **AI自律判断で終了**: 意図が十分に明確になったと判断したら質問を止める
-- Issueの内容が明確で疑問点がない場合は質問せずに次へ進む（0問も可）
+- 質問リストの最優先の質問から1問だけ聞く
+- ユーザーの回答を受け取る
+- 回答を踏まえて次の質問が必要か判断し、必要なら次の1問を聞く
+- 「明確化の必要なし」と返ってきた場合、または全質問への回答が得られたら次へ進む
 
-**質問例（実際は状況に応じた内容で）**：
-> 「Issue #42の『リアルタイム同期機能』について確認です。クライアント間の同期はWebSocket接続を想定していますか？それとも定期的なポーリングで十分でしょうか？」
+**質問のルール**：
+- 1ターンに1問だけ。まとめて聞かない
+- ユーザーの回答が新たな不明点を生んだ場合、spec-validatorのリストにない追加質問をしても良い
+- 意図が明確になったと判断したら質問を止める（全質問を消化しなくても良い）
 
-質問ループで得た回答を記録し、Step 2以降の調査とSpec草案作成に反映させる。
+得られた全ての回答を「明確化されたコンテキスト」として記録し、Step 2以降に活用する。
 
 ### Step 2: 並列コードベース調査
 
-`../../agents/codebase-analyst.md` と `../../agents/architecture-analyst.md` を Read し、`[issueのタイトルと本文]`（Step 1.5の質問回答も含む）を実際の内容で置換して、2体のExploreエージェントを**同時に**起動する：
+`../../agents/codebase-analyst.md` と `../../agents/architecture-analyst.md` を Read し、`[issueのタイトルと本文]`（Step 1.5で明確化されたコンテキストも含む）を実際の内容で置換して、2体のExploreエージェントを**同時に**起動する：
 
 **Agent A（codebase-analyst）**: 類似機能・競合コード・踏襲すべきパターンを調査
 
 **Agent B（architecture-analyst）**: アーキテクチャ制約・既存docs・テスト基盤を調査
 
-### Step 3: Spec草案の作成
+### Step 3: Spec作成と投稿
 
-`../../templates/spec.md.template` を参照してSpecの草案を作成する（まだIssueには投稿しない）。
+Step 1.5の明確化されたコンテキスト＋Step 2の調査結果を統合して、`../../templates/spec.md.template` を参照しながらSpecを作成する。
 
 フォーマットは `references/spec-format.md` に従う。重要な点：
 - **Context（Why）**: Issueの背景・解決する課題を明確に記述
 - **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
-- **Acceptance Criteria**: 各Goalに対してテスト可能な受け入れ基準を記述（必須）
-- **ADR**: なぜこのアーキテクチャを選択したか、代替案と具体的な却下理由を必ず含める
-- **Non-Goals**: スコープを明確に定義する
+- **Acceptance Criteria**: 各Goalに対してテスト可能な受け入れ基準（Step 1.5の明確化で得た合意内容を反映）
+- **ADR**: 採用アプローチ・代替案・具体的な却下理由（Step 1.5で意思決定の根拠を確認済みなら反映）
+- **Non-Goals**: スコープ外を明確に記述
 
-### Step 3.5: Spec自律検証FBループ
-
-`../../agents/spec-validator.md` を Read し、`[specの内容]` を草案の内容で置換してExploreエージェントを起動する。
-
-**CRITICAL / HIGH** の指摘がある場合は草案を修正して再度検証する（最大3回繰り返す）。3回修正してもCRITICALが残る場合はユーザーに報告して判断を仰ぐ。
-
-**MEDIUM** 以下の指摘のみの場合（または問題なしの場合）は次のステップへ進む。
-
-### Step 3.6: Specコメント投稿
-
-検証を通過したSpecをIssueにGitHubコメントとして投稿する：
+作成したSpecをIssueにGitHubコメントとして投稿する：
 
 ```bash
 gh issue comment <N> --body "$(cat <<'EOF'
@@ -139,8 +127,6 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 以下を表示してワークフローを**完全に停止する**：
 
 ```
-✅ Specの品質検証が完了しました（spec-validatorサマリー: CRITICAL X件修正・HIGH Y件修正）
-
 📋 IssueのSpecコメントを確認してください: <ISSUE_URL>
 
 確認すべき点:
@@ -151,7 +137,7 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 - Non-Goals: 今回やらないことが明確になっているか
 
 承認する場合: `/arc-investigating` を実行してください
-修正が必要な場合: 会話でAIに修正箇所を伝えてください（以下のSpec修正フローが起動します）
+修正が必要な場合: 会話でAIに修正箇所を伝えてください（Spec修正フローが起動します）
 ```
 
 **⚠️ 重要: このステップでワークフローは必ず終了する。ユーザーの明示的な指示なしに `/arc-investigating` を自動実行してはならない。**
@@ -160,16 +146,19 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 ユーザーが「ここを直したい」「このGoalが違う」等と伝えてきた場合、以下のフローで対応する：
 
-**フェーズ1: 意図の深掘り**
-- Step 1.5と同じルールで、修正意図を理解するための質問を1問ずつ行う
-- 「なぜそう思ったか」「どういう状態になれば理想か」「他に関連して変えたい点はあるか」等を引き出す
-- AI自律判断で意図が明確になったら質問を止める
+**フェーズ1: 意図の深掘り（spec-validatorを使う）**
+
+- `../../agents/spec-validator.md` を Read し、`[issueまたはspecの内容]` を「現在のspec内容 + ユーザーの修正意図」に置換してExploreエージェントを起動する
+- spec-validatorが返した質問リストを1問ずつユーザーに聞く（Step 1.5と同じルール）
+- 修正意図が明確になるまで続ける
 
 **フェーズ2: まとめた修正提案**
+
 - 質問で得た情報を統合し、修正が必要な全箇所をまとめて提示する
 - 変更前後の差分形式で提示する（変更しない部分は省略）
 
 **フェーズ3: 確認と反映**
+
 - ユーザーが承認したら、Issueコメントを更新する：
   ```bash
   SPEC_COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
@@ -177,7 +166,6 @@ git commit -m "spec: add docs for issue #NNN - <title>"
   gh api repos/${REPO}/issues/comments/${SPEC_COMMENT_ID} \
     -X PATCH -f body="<更新後のspec全文>"
   ```
-- spec-validatorを再実行してCRITICAL/HIGHがないことを確認する
 - `docs/` ファイルも必要に応じて更新してコミットする
 - 再度 Step 5 の完全停止メッセージを表示して承認を待つ
 
@@ -186,6 +174,5 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 - specの内容はIssueコメントに保存される（`specs/` ディレクトリは使用しない）
 - `docs/` ディレクトリが存在しない場合は作成する
 - 既存の `docs/` ファイルがある場合は上書き更新する
-- Acceptance Criteriaがない場合はspec-validatorがCRITICALを返すため、必ずStep 3.5でキャッチされる
 - **arc-specifyingは後続フェーズに自動移行しない唯一のスキル**。Specは全開発の土台であるため、人間の確認・承認が必須
-- Step 1.5の質問は「疑問解消のための最小限の質問」であって、全ての詳細をIssueから引き出そうとしない。必要最小限の明確化にとどめる
+- spec-validatorが「明確化の必要なし」と返した場合でも、Issueが短すぎる・抽象的すぎると感じたら追加で確認してよい
