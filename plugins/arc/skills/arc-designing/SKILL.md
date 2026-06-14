@@ -66,7 +66,7 @@ design-clarifierが以下を判断する：
 
 **Agent C（dependency-analyst）**: `[specの全文]` を置換して起動（常に起動。ライブラリ・外部APIの存在・バージョン適合性を確認）
 
-**Agent D（conflict-analyst）**: `[specの全文]` を置換して起動（常に起動。競合コード・破壊的変更・パフォーマンス懸念を調査。変革型では特に網羅的に）
+**Agent D（risk-analyst）**: `[specの全文]` を置換して起動（常に起動。破壊的変更・パフォーマンスリスク・セキュリティ設計制約・テスト基盤を調査。変革型では特に網羅的に）
 
 #### Phase 2b: Web調査クエリの生成
 
@@ -190,7 +190,7 @@ Step 2.5 の DESIGN_DIRECTION と Step 3 の実現性評価をもとに、以下
 #### 依存関係（dependency-analyst）
 [ライブラリ・外部API確認結果]
 
-#### 競合・破壊的変更（conflict-analyst）
+#### リスク分析（risk-analyst）
 [既存コードとの競合・パフォーマンス懸念]
 
 #### Web調査（web-research-analyst）
