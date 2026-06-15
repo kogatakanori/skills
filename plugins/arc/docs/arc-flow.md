@@ -262,12 +262,9 @@ flowchart TD
     %% ─────────────────────────────
     subgraph SPEC["📋 arc-specifying"]
         direction TB
-        S15["Step 1.5 意図の明確化"]
-        sv["spec-clarifier\n設計ツリーのQ&A生成\nコードベース自律調査\n（Domain Model確認・既存API確認など\n意図に必要な範囲のみ）"]
-        S25["Step 2.5 品質チェック"]
-        srw["spec-reviewer\n完全性・ACテスト可能性\nUC↔Goal整合\nConstraints計測可能性\n内部整合性"]
-        S15 -->|"常時"| sv
-        S25 -->|"常時"| srw
+        sv["spec-clarifier 【Step 1.5 常時】\n設計ツリーQ&A / コードベース自律調査\n（Domain Model確認・既存API確認など）"]
+        srw["spec-reviewer 【Step 2.5 常時】\n完全性・ACテスト可能性\nUC↔Goal整合 / Constraints計測可能性 / 内部整合性"]
+        sv --> srw
     end
 
     %% ─────────────────────────────
@@ -275,28 +272,15 @@ flowchart TD
     %% ─────────────────────────────
     subgraph DESIGN["🔧 arc-designing"]
         direction TB
-        D2a["Phase 2a ローカル調査（5並列）"]
-        D2c["Phase 2c Web調査"]
-        cb["codebase-analyst\n踏襲型: パターン・再利用コンポーネント調査\n変革型: 変更対象・影響範囲を特定"]
-        aa["architecture-analyst\nアーキテクチャ制約・docs・テスト基盤調査"]
-        dep["dependency-analyst\nライブラリ・API存在確認\n破壊的変更リスク"]
-        perf["performance-analyst\nクエリパターン・キャッシュ\n同時実行・スケーラビリティ"]
-        sec["security-analyst\n認証・認可モデル\nデータ機密性・脅威ベクター"]
-        web["web-research-analyst\n不明項目がある場合のみ"]
-        D15["Step 1.5 変更タイプ判断"]
-        D25["Step 2.5 HOW判断Q&A"]
-        dc["design-clarifier\nPhase 1: 踏襲型/変革型の判断\nPhase 2: アーキテクチャ・データモデル\n統合方式・テスト戦略のHOW判断"]
-        D5b["Step 5-b 品質チェック"]
-        drw["design-reviewer\nSpec要件カバレッジ\nトレーサビリティ完全性\nConstraintガードレール"]
-        D2a -->|"常時 並列"| cb
-        D2a -->|"常時 並列"| aa
-        D2a -->|"常時 並列"| dep
-        D2a -->|"常時 並列"| perf
-        D2a -->|"常時 並列"| sec
-        D2c -->|"🔶 条件付き"| web
-        D15 -->|"常時"| dc
-        D25 -->|"常時"| dc
-        D5b -->|"常時"| drw
+        dc["design-clarifier 【Steps 1.5/2.5 常時】\nPhase 1: 踏襲型/変革型の判断\nPhase 2: HOW判断Q&A（アーキテクチャ・データモデル等）"]
+        cb["codebase-analyst 【Phase 2a 常時 並列①】\n踏襲型: 参考パターン・再利用コンポーネント調査\n変革型: 変更対象の既存実装・影響範囲を特定"]
+        aa["architecture-analyst 【Phase 2a 常時 並列②】\nアーキテクチャ制約・既存docs・テスト基盤調査"]
+        dep["dependency-analyst 【Phase 2a 常時 並列③】\nライブラリ・API存在確認・バージョン適合性\n破壊的変更リスク"]
+        perf["performance-analyst 【Phase 2a 常時 並列④】\nクエリパターン・キャッシュ設計\n同時実行・スケーラビリティ懸念"]
+        secan["security-analyst 【Phase 2a 常時 並列⑤】\n認証・認可モデル\nデータ機密性・脅威ベクター"]
+        web["web-research-analyst 【Phase 2c 🔶条件付き】\n不明ライブラリ・外部API・セキュリティ情報をWeb確認"]
+        drw["design-reviewer 【Step 5-b 常時】\nSpec要件カバレッジ・トレーサビリティ完全性\nConstraintガードレール・テスト戦略明示"]
+        dc --> cb --> aa --> dep --> perf --> secan --> web --> drw
     end
 
     %% ─────────────────────────────
@@ -304,9 +288,7 @@ flowchart TD
     %% ─────────────────────────────
     subgraph PLAN["📝 arc-planning"]
         direction TB
-        P2["Step 2 実装詳細調査"]
-        ia["implementation-analyst\n変更ファイル・テスト要件を特定"]
-        P2 -->|"常時"| ia
+        ia["implementation-analyst 【Step 2 常時】\n変更が必要な全ファイルとテスト要件を特定\nタスクの依存順序を整理"]
     end
 
     %% ─────────────────────────────
@@ -314,17 +296,12 @@ flowchart TD
     %% ─────────────────────────────
     subgraph IMPL6["⚙️ arc-implementing ⑥（タスクごと）"]
         direction TB
-        I6["⑥ レビュー起動"]
-        qr["quality-reviewer\n命名・責務・重複・複雑度"]
-        al["architecture-linter\nTDD遵守 / レイヤー境界\nパッケージ制限 / ADRルール"]
-        sec["security-reviewer\nauth / token / sql / api 等"]
-        ar["architecture-reviewer\n変更3件以上 or 新規2件以上\nservice/domain/infra 等"]
-        ci["cicd-reviewer\n.github/ / Dockerfile\nmigration / package.json 等"]
-        I6 -->|"常時"| qr
-        I6 -->|"常時"| al
-        I6 -->|"🔶 条件付き"| sec
-        I6 -->|"🔶 条件付き"| ar
-        I6 -->|"🔶 条件付き"| ci
+        qr["quality-reviewer 【常時】\n命名・責務・重複・複雑度"]
+        al["architecture-linter 【常時】\nTDD遵守 / レイヤー境界\nパッケージ制限 / ADRルール"]
+        sec2["security-reviewer 【🔶条件付き】\nauth / token / sql / api 等"]
+        ar["architecture-reviewer 【🔶条件付き】\n変更3件以上 or 新規2件以上\nservice/domain/infra 等"]
+        ci["cicd-reviewer 【🔶条件付き】\n.github/ / Dockerfile\nmigration / package.json 等"]
+        qr --> al --> sec2 --> ar --> ci
     end
 
     %% ─────────────────────────────
@@ -332,20 +309,13 @@ flowchart TD
     %% ─────────────────────────────
     subgraph IMPL25["⚙️ arc-implementing Step 2.5（最終横断）"]
         direction TB
-        I25A["2.5-A 横断レビュー"]
-        I25B["2.5-B カバレッジチェック"]
-        qr2["quality-reviewer"]
-        al2["architecture-linter"]
-        sec2["security-reviewer"]
-        ar2["architecture-reviewer"]
-        ci2["cicd-reviewer"]
-        scr["spec-coverage-reviewer\nGoal / Acceptance Criteria\n/ Constraints のカバレッジ検証"]
-        I25A -->|"常時"| qr2
-        I25A -->|"常時"| al2
-        I25A -->|"🔶 条件付き"| sec2
-        I25A -->|"🔶 条件付き"| ar2
-        I25A -->|"🔶 条件付き"| ci2
-        I25B -->|"常時"| scr
+        qr2["quality-reviewer 【2.5-A 常時】"]
+        al2["architecture-linter 【2.5-A 常時】"]
+        sec3["security-reviewer 【2.5-A 🔶条件付き】"]
+        ar2["architecture-reviewer 【2.5-A 🔶条件付き】"]
+        ci2["cicd-reviewer 【2.5-A 🔶条件付き】"]
+        scr["spec-coverage-reviewer 【2.5-B 常時】\nGoal / Acceptance Criteria\n/ Constraints のカバレッジ検証"]
+        qr2 --> al2 --> sec3 --> ar2 --> ci2 --> scr
     end
 
     SPEC --> DESIGN --> PLAN --> IMPL6 --> IMPL25
