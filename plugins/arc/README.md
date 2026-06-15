@@ -164,9 +164,6 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 | dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認 | arc-designing |
 | performance-analyst | パフォーマンス設計制約（クエリ・キャッシュ・同時実行）を調査 | arc-designing |
 | security-analyst | セキュリティ設計制約（認証・認可・データ機密性）を特定 | arc-designing |
-| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認 | arc-designing |
-| performance-analyst | パフォーマンス設計制約（クエリ・キャッシュ・同時実行）を調査 | arc-designing |
-| security-analyst | セキュリティ設計制約（認証・認可・データ機密性）を特定 | arc-designing |
 | implementation-analyst | 実装対象コードの詳細調査 | arc-planning |
 | security-reviewer | セキュリティレビュー | arc-implementing |
 | architecture-reviewer | アーキテクチャレビュー | arc-implementing |
