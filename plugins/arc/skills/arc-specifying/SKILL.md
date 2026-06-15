@@ -108,7 +108,7 @@ spec-reviewerの結果を受け取ったら：
 
 `../../templates/docs.md.template` を参照して `docs/<feature-name>.md` を生成する。
 
-フォーマットは `references/docs-format.md` に従う。機能の概要・使い方・仕様を記述する（「何を・どう使うか」にフォーカス）。
+フォーマットは `../../templates/docs-format.md` に従う。機能の概要・使い方・仕様を記述する（「何を・どう使うか」にフォーカス）。
 
 ### Step 4: コミットと完全停止（人間の承認を待つ）
 
