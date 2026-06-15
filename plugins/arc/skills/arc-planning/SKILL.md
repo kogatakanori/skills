@@ -16,18 +16,19 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 
 1. `ISSUE_NUM`: システムプロンプトの `gitStatus` セクションに含まれる現在のブランチ名（例: `feature/issue-42-add-auth`）から正規表現 `issue-(\d+)` で抽出する。該当しない場合はユーザーに正しいブランチへ切り替えるよう案内して終了する。
 
-2. `REPO`: 以下のコマンドで取得する（worktree環境でも動作する）：
+2. `REPO`: 以下のコマンドを単体で実行して取得する（worktree環境でも動作する）：
    ```bash
-   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   gh repo view --json nameWithOwner -q .nameWithOwner
    ```
 
-**Spec・調査結果の取得**:
+**Spec・調査結果の取得**（コマンドは1つずつ単体で実行し、`<REPO>` `<ISSUE_NUM>` は実際の値で置換する）:
 
 ```bash
-SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body')
-INVESTIGATION=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .body')
+gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body'
+```
+
+```bash
+gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .body'
 ```
 
 `<!-- arc:design -->` コメントが存在しない場合は、`/arc-designing` を先に実行するよう案内して終了。

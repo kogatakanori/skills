@@ -24,19 +24,18 @@ arc-specifyingで「実現したいこと（意図）」が確定した後、こ
 
 1. `ISSUE_NUM`: システムプロンプトの `gitStatus` セクションに含まれる現在のブランチ名（例: `feature/issue-42-add-auth`）から正規表現 `issue-(\d+)` で抽出する。該当しない場合はユーザーに正しいブランチへ切り替えるよう案内して終了する。
 
-2. `REPO`: 以下のコマンドで取得する（worktree環境でも動作する）：
+2. `REPO`: 以下のコマンドを単体で実行して取得する（worktree環境でも動作する）：
    ```bash
-   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   gh repo view --json nameWithOwner -q .nameWithOwner
    ```
 
-**Specの取得**:
+**Specの取得**（`<REPO>` `<ISSUE_NUM>` は実際の値で置換して単体で実行）:
 
 ```bash
-SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body')
+gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body'
 ```
 
-`SPEC_CONTENT` が空の場合は、`/arc-specifying <N>` を先に実行するよう案内して終了。
+Specが空の場合は、`/arc-specifying <N>` を先に実行するよう案内して終了。
 
 ### Step 1.5: design-clarifier【Phase 1】変更タイプの判断
 
@@ -255,21 +254,20 @@ design-reviewerの結果を受け取ったら：
 
 品質チェック通過後、既存の `<!-- arc:design -->` コメントがある場合は更新し、なければ新規投稿する：
 
-```bash
-COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .id')
+コマンドは1つずつ単体で実行する（シェル変数代入・if文・パイプは使わない）：
 
-BODY="$(cat <<'EOF'
-[Step 5-aで作成した設計内容の全文]
-EOF
-)"
-
-if [ -n "$COMMENT_ID" ]; then
-  gh api repos/${REPO}/issues/comments/${COMMENT_ID} -X PATCH -f body="$BODY"
-else
-  gh issue comment ${ISSUE_NUM} --body "$BODY"
-fi
-```
+1. 既存の `<!-- arc:design -->` コメントIDを確認する（`<REPO>` `<ISSUE_NUM>` は実際の値で置換）：
+   ```bash
+   gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .id'
+   ```
+2. IDが取得できた場合（既存コメントあり）は更新する（`<COMMENT_ID>` は前のコマンドの出力値）：
+   ```bash
+   gh api repos/<REPO>/issues/comments/<COMMENT_ID> -X PATCH -f body="<Step 5-aで作成した設計内容の全文>"
+   ```
+   IDが空だった場合（既存コメントなし）は新規投稿する：
+   ```bash
+   gh issue comment <ISSUE_NUM> --body "<Step 5-aで作成した設計内容の全文>"
+   ```
 
 ### Step 6: Docsの更新
 

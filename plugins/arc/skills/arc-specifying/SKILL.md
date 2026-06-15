@@ -156,13 +156,15 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 **フェーズ3: 確認と反映**
 
-- ユーザーが承認したら、Issueコメントを更新する：
-  ```bash
-  SPEC_COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-    --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .id')
-  gh api repos/${REPO}/issues/comments/${SPEC_COMMENT_ID} \
-    -X PATCH -f body="<更新後のspec全文>"
-  ```
+- ユーザーが承認したら、Issueコメントを更新する。コマンドは1つずつ単体で実行し、前のコマンドの出力値を次に直接埋め込む（シェル変数代入 `VAR=$(command)` や `${VAR}` 展開は使わない）：
+  1. コメントIDを取得する（`<REPO>` `<ISSUE_NUM>` は実際の値で置換）：
+     ```bash
+     gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .id'
+     ```
+  2. 取得したIDでコメントを更新する（`<COMMENT_ID>` は前のコマンドの出力値）：
+     ```bash
+     gh api repos/<REPO>/issues/comments/<COMMENT_ID> -X PATCH -f body="<更新後のspec全文>"
+     ```
 - `docs/` ファイルも必要に応じて更新してコミットする
 - 再度 Step 5 の完全停止メッセージを表示して承認を待つ
 
