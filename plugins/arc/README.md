@@ -68,7 +68,7 @@ GitHub Issue
 |------|--------|---------|
 | Spec（Why・ADR） | GitHub Issue コメント | `<!-- arc:spec -->` で識別 |
 | 実現性調査結果 | GitHub Issue コメント | `<!-- arc:design -->` で識別 |
-| Taskリスト | GitHub Issue コメント | `<!-- arc:tasks -->` で識別 |
+| Taskリスト | GitHub Issue コメント | `<!-- arc:tasks -->` で識別。`<!-- worktree: true/false -->` メタデータを含む |
 | ドキュメント（What） | `docs/*.md` | 常に最新版を上書き保存 |
 
 ## スキル一覧
