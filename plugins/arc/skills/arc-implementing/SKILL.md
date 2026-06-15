@@ -23,7 +23,7 @@ IssueのtasksコメントのタスクをTDDで全て自律実装し、専門レ�
 
 3. `ISSUE_URL`: `https://github.com/${REPO}/issues/${ISSUE_NUM}` として構築する（bashコマンド不要）。
 
-**タスク・Specの取得**:
+**タスク・Spec・Designの取得**:
 
 ```bash
 TASKS_COMMENT_ID=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
@@ -32,10 +32,40 @@ TASKS_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:tasks -->"))][0] | .body')
 SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body')
+DESIGN_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
+  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .body')
 ```
 
 tasksコメントが見つからない場合は `/arc-planning` を先に実行するよう案内して終了。
-specとdocsも読み込んで実装の文脈として利用する。
+spec（意図）・design（ADR・スコープ）・docsも読み込んで実装の文脈として利用する。
+
+**worktreeのセットアップ（必要な場合のみ）**
+
+以下のいずれかに該当する場合、worktreeを作成してセッションを切り替える：
+- `TASKS_CONTENT` に `<!-- worktree: true -->` が含まれる
+- 起動プロンプトに `WORKTREE_NEEDED=true` が含まれる
+
+該当する場合：
+
+1. `.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定であれば自動セットアップする：
+   1. `.claude/hooks/` ディレクトリを作成
+   2. `../../templates/hooks/worktree-create.sh` を `.claude/hooks/worktree-create.sh` にコピー
+   3. `../../templates/hooks/worktree-remove.sh` を `.claude/hooks/worktree-remove.sh` にコピー
+   4. 両ファイルに実行権限を付与：`chmod +x .claude/hooks/worktree-*.sh`
+   5. `.claude/settings.json` の `hooks` に以下をマージ：
+      ```json
+      {
+        "WorktreeCreate": [{"type": "command", "command": "bash .claude/hooks/worktree-create.sh"}],
+        "WorktreeRemove": [{"type": "command", "command": "bash .claude/hooks/worktree-remove.sh"}]
+      }
+      ```
+
+2. `EnterWorktree` ツールで `name=issue-<N>` を指定してworktreeを作成する
+   - `.worktreeinclude` に記載されたファイルが自動コピーされる
+   - `WorktreeCreate` hook が自動実行される
+   - 現在のセッションがworktree内に切り替わる
+
+どちらにも該当しない場合は、arc-specifyingで作成済みのブランチのまま実装を進める。
 
 ### Step 2: TDD実装ループ（全タスク完了まで繰り返す）
 
@@ -93,20 +123,22 @@ NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
 | エージェント | 起動条件 |
 |---|---|
 | **quality-reviewer** | 常に起動 |
+| **architecture-linter** | 常に起動（ADRとの整合性チェック） |
 | **security-reviewer** | `CHANGED_FILES` に（**大文字小文字を区別せず**）`auth\|login\|password\|token\|jwt\|session\|permission\|oauth\|api/\|route\|controller\|handler\|sql\|query\|repository\|validator\|middleware\|sanitize\|secret\|crypto\|hash\|serial\|upload\|billing\|payment` のいずれかを含む場合 |
 | **architecture-reviewer** | `CHANGED_COUNT` が3以上 OR `NEW_FILES` が**2件以上** OR `CHANGED_FILES` に `service\|domain\|infra\|repository\|module\|core\|gateway\|usecase\|adapter` のいずれかを含む場合 |
 | **cicd-reviewer** | `CHANGED_FILES` に（**大文字小文字を区別せず**）`.github/\|.gitlab-ci\|Jenkinsfile\|.circleci\|migration\|migrate\|schema\|\.env\|config/\|settings\|package\.json\|package-lock\|yarn\.lock\|pnpm-lock\|poetry\.lock\|Pipfile\.lock\|pyproject\.toml\|requirements\.txt\|Cargo\.toml\|go\.mod\|Makefile\|Dockerfile\|docker-compose\|terraform/\|\.tf\|k8s/\|kubernetes/\|helm/\|ansible/\|bitbucket-pipelines` のいずれかを含む場合 |
 
-起動対象と判定したエージェントファイルを Read し、対応するプレースホルダーを置換して**同時に**起動する（quality-reviewerのみになる場合もあり得る）：
+起動対象と判定したエージェントファイルを Read し、対応するプレースホルダーを置換して**同時に**起動する：
 
-- **`../../agents/security-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
-- **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[specのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換
 - **`../../agents/quality-reviewer.md`** (常時): `[git diff HEAD の出力]` を置換
+- **`../../agents/architecture-linter.md`** (常時): `[git diff HEAD の出力]` と `[designコメントのADRセクション]` を置換（`DESIGN_CONTENT`の`### ADR`セクション部分を渡す）
+- **`../../agents/security-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
+- **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[designコメントのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換（ADRは`DESIGN_CONTENT`から）
 - **`../../agents/cicd-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
 
 **⑦ 指摘の統合と修正**
 - 全エージェントの指摘を統合する
-- CRITICAL/HIGHの指摘は必ず修正する
+- CRITICAL/HIGHの指摘は必ず修正する（architecture-linterのCRITICALはADR違反なので最優先で修正）
 - MEDIUM/LOWの指摘は修正が適切かを判断して対応する
 - 修正後は⑤へ戻ってテストをパスすることを確認する（最大2回まで。解消できない場合はユーザーに報告して判断を仰ぐ）
 
@@ -136,7 +168,7 @@ NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
 - `- [ ]` のタスクが残っていれば、タスク種別（`[test]` or `[impl]`）を確認して①または④へ戻る
 - 全タスク完了したらStep 2.5へ
 
-### Step 2.5: 最終一括レビュー
+### Step 2.5: 最終一括レビュー＋Specカバレッジチェック
 
 全`[impl]`タスクの実装完了後、PRブランチ全体を対象に最終レビューを実施する。
 
@@ -152,7 +184,9 @@ FULL_CHANGED_COUNT=$(echo "$FULL_CHANGED_FILES" | grep -c .)
 FULL_NEW_FILES=$(git diff "${BASE}" --name-only --diff-filter=A)
 ```
 
-⑥のフィルタリングルール表を参照してエージェントを選択し、**同時に**起動する。判定変数の対応は以下の通り：
+**2.5-A: 既存レビューエージェント（横断チェック）**
+
+⑥のフィルタリングルール表を参照してエージェントを選択し、**spec-coverage-reviewerと同時に**起動する。判定変数の対応は以下の通り：
 
 | ⑥の変数名 | Step 2.5 での対応変数 |
 |---|---|
@@ -162,11 +196,29 @@ FULL_NEW_FILES=$(git diff "${BASE}" --name-only --diff-filter=A)
 
 各エージェントのプレースホルダーは以下の通り置換する：
 - `[git diff HEAD の出力]` → `FULL_DIFF` の内容（**PRブランチ全体のdiff**。エージェント起動時の指示にも「このdiffはPR全体の累積差分です」と明記してコンテキストを正確に伝える）
+- `[designコメントのADRセクション]` → `DESIGN_CONTENT` の `### ADR` セクション部分（Step 1で取得済み）
 - その他のプレースホルダーは⑥と同様
+
+**2.5-B: Specカバレッジチェック（常に実行）**
+
+`../../agents/spec-coverage-reviewer.md` を Read し、以下のプレースホルダーを置換してExploreエージェントを起動する（2.5-Aと同時に）：
+- `[specの内容]` → SPEC_CONTENTの内容
+- `[PRブランチのdiffの内容]` → FULL_DIFFの内容
 
 **⑥ですでに検出・修正した指摘の重複は無視してよい。** 最終レビューの目的はタスク間をまたぐ横断的な問題（全タスクの組み合わせで生じる不整合・セキュリティ上の見落とし等）の検出である。
 
-CRITICAL/HIGHの新規指摘は必ず修正し、テストがGREENであることを確認してからコミットする。完了したらStep 3へ。
+**カバレッジチェックの結果の処理**:
+
+spec-coverage-reviewerのCRITICAL/HIGH指摘がある場合、**自動修正せず**に `AskUserQuestion` でユーザーに確認する：
+
+> "以下のGoal/Acceptance Criteriaに対応するテストが見つかりませんでした。テストを追加しますか、それともこのままPR作成に進みますか？
+>
+> [カバレッジマトリックスと推奨テストの一覧]"
+
+- ユーザーが「テストを追加する」を選択した場合: 推奨テストを元にテストを実装し、GREENを確認してコミットする
+- ユーザーが「そのまま進む」を選択した場合: PRの説明に「未カバー要件: [一覧]」をセクションとして追加してStep 3へ進む
+
+その後、他エージェントのCRITICAL/HIGHを修正してStep 3へ。
 
 ### Step 3: PR自動作成
 
@@ -180,7 +232,7 @@ CRITICAL/HIGHの新規指摘は必ず修正し、テストがGREENであるこ�
 git push -u origin $(git branch --show-current)
 ```
 
-specのContext/Goal/ADRとdocsの変更点からPR説明を生成する：
+specのContext/GoalとdesignのADR（`DESIGN_CONTENT`から）とdocsの変更点からPR説明を生成する：
 
 ```markdown
 ## Summary
@@ -211,7 +263,9 @@ EOF
 
 **PR URLを出力する。PRがマージされるとIssueは自動でクローズされる。**
 
-### Step 4: worktreeのクリーンアップ
+### Step 4: worktreeのクリーンアップ（worktree使用時のみ）
+
+Step 1でworktreeを作成した場合のみ実行する。
 
 PRがマージされたら `ExitWorktree` ツールを `action="remove"` で呼び出してworktreeを終了する。
 
@@ -221,6 +275,8 @@ PRがマージされたら `ExitWorktree` ツールを `action="remove"` で呼�
 git worktree remove .claude/worktrees/issue-<N>
 git branch -d <branch-name>
 ```
+
+worktreeを使用していない場合は何もしない（ブランチはPRマージ後に `/arc-cleaning` でまとめて整理する）。
 
 ## Notes
 

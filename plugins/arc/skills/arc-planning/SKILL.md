@@ -27,10 +27,10 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 SPEC_CONTENT=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
   --jq '[.[] | select(.body | startswith("<!-- arc:spec -->"))][0] | .body')
 INVESTIGATION=$(gh api repos/${REPO}/issues/${ISSUE_NUM}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- arc:investigation -->"))][0] | .body')
+  --jq '[.[] | select(.body | startswith("<!-- arc:design -->"))][0] | .body')
 ```
 
-`<!-- arc:investigation -->` コメントが存在しない場合は、`/arc-investigating` を先に実行するよう案内して終了。
+`<!-- arc:design -->` コメントが存在しない場合は、`/arc-designing` を先に実行するよう案内して終了。
 
 ### Step 2: 実装対象コードの詳細調査
 
@@ -57,29 +57,61 @@ docsの内容は `docs/` ディレクトリから対応ファイルを読み取�
 
 `../../templates/tasks.md.template` を参照してタスクリストの初版を作成する。
 
+### Step 3.5: Goal→タスクのトレーサビリティマトリックス作成
+
+specのGoalおよびAcceptance Criteriaと、作成したタスクを紐付けるマトリックスを作成する：
+
+```
+| Goal / AC | 対応タスク |
+|-----------|-----------|
+| Goal 1: ○○できる | [test] UserService.createUser()テスト, [impl] UserService.createUser()実装 |
+| AC-1: 〜の場合〜となること | [test] UserService.createUser()テスト |
+```
+
+**カバレッジチェック**: 全Goal・全ACに対応するタスクがあるか確認する。
+対応するタスクがないGoal/ACがある場合は、対応する `[test]`/`[impl]` タスクを追加する。
+
+このマトリックスはタスクコメントの先頭に含める。
+
 ### Step 4: 自律タスクレビューFBループ
 
 以下の品質観点でタスクリストをレビューし、問題があれば修正する（最大3回繰り返す）：
 
 1. **TDD対応**: 全ての `[impl]` タスクに対応する `[test]` タスクが直前にあるか
-2. **粒度の適切さ**: 1タスクが1〜2時間程度で完了できるサイズか
-3. **依存関係の順序**: 依存するコードが先に実装されるよう順序付けられているか
-4. **Goalのカバレッジ**: specのGoalを全てカバーするタスクが存在するか
+2. **Specカバレッジ**: 全てのGoal・ACに対応するタスクがトレーサビリティマトリックスに存在するか
+3. **粒度の適切さ**: 1タスクが1〜2時間程度で完了できるサイズか
+4. **依存関係の順序**: 依存するコードが先に実装されるよう順序付けられているか
 5. **インフラ・設定**: DBマイグレーション・設定変更など非機能タスクが含まれているか
 
 問題がある場合はタスクを修正・分割・統合・並び替えして再度チェックする。
 
+**重要**: Goal/ACに対応するタスクがないことはFBループの最優先修正対象とする。
+
+### Step 4.5: worktree使用有無の判断
+
+タスク数と内容から、実装フェーズでworktreeを使用するかを判断する。
+
+**worktree使用を推奨する条件**（いずれか該当）：
+- タスク総数が10件以上
+- 実装が複数日にわたることが見込まれる
+- 他のブランチでの開発と並行して進める必要がある
+
+上記に該当する場合は `WORKTREE_NEEDED=true`、該当しない場合は `WORKTREE_NEEDED=false` として記録する。
+
 ### Step 5: タスクリストをIssueコメントに投稿
 
-品質基準を満たしたタスクリストをIssueコメントとして投稿する：
+品質基準を満たしたタスクリストをIssueコメントとして投稿する。`WORKTREE_NEEDED` の値をメタデータとして先頭行に含める：
 
 ```bash
 gh issue comment ${ISSUE_NUM} --body "$(cat <<'EOF'
 <!-- arc:tasks -->
+<!-- worktree: true -->
 ...タスクリストの内容...
 EOF
 )"
 ```
+
+（`WORKTREE_NEEDED=false` の場合は `<!-- worktree: false -->` にする）
 
 タスク一覧を出力して確認できるようにする。
 
@@ -90,9 +122,9 @@ EOF
 1. "タスク分解が完了しました。実装フェーズを開始します..." と表示する
 2. **`Agent` ツールで sub-agent を spawn し、以下の prompt を渡す：**
    ```
-   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。ISSUE_NUM と REPO はこの prompt の値を使用すること。
+   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。WORKTREE_NEEDED=<true/false>。ISSUE_NUM・REPO・WORKTREE_NEEDED はこの prompt の値を使用すること。
    ```
-   `<N>` と `<owner/repo>` は Step 1 で取得済みの値に置換する。
+   `<N>`・`<owner/repo>`・`<true/false>` は Step 1 および Step 4.5 で確定済みの値に置換する。
 
 ## Notes
 

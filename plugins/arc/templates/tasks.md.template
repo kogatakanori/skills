@@ -1,5 +1,13 @@
 <!-- arc:tasks -->
+<!-- worktree: false -->
 # Tasks: Feature Title
+
+## Goal→タスク対応表
+
+| Goal / AC | 対応タスク |
+|-----------|-----------|
+| Goal 1    | [test] XXX, [impl] XXX |
+| AC-1      | [test] XXX |
 
 ## 未完了
 
