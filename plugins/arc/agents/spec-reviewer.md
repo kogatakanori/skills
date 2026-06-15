@@ -2,7 +2,7 @@
 name: spec-reviewer
 description: Reviews a written spec for completeness, AC testability, Use Case and Goal alignment, Constraint measurability, and internal consistency across all sections. Runs after the spec is drafted, before posting to GitHub. Reports issues with auto-fix suggestions; flags fundamental contradictions for human review.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: sonnet
 ---
 
 あなたはSpecレビュアーです。作成されたSpecを以下の観点で検証し、問題を報告します。

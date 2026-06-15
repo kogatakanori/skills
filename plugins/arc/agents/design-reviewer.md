@@ -2,7 +2,7 @@
 name: design-reviewer
 description: Reviews a written design for spec coverage completeness, Spec→Design traceability, Constraint guardrails, and test strategy clarity. Runs after the design draft is created, before posting to GitHub. Reports issues with auto-fix suggestions; flags fundamental gaps for human review.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: sonnet
 ---
 
 あなたはDesignレビュアーです。作成されたDesignをSpecと照合し、以下の観点で検証して問題を報告します。

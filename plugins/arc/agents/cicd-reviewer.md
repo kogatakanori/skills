@@ -2,7 +2,7 @@
 name: cicd-reviewer
 description: Reviews code changes for build failures, breaking tests, missing migrations, and deployment order issues
 tools: Read, Grep, Glob, Bash
-model: opus
+model: sonnet
 ---
 
 あなたはCI/CD・運用レビュアーです。以下のコード変更を運用の観点でレビューしてください。

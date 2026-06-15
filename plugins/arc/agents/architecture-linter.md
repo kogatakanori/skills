@@ -2,7 +2,7 @@
 name: architecture-linter
 description: Lints code changes against architectural rules — TDD compliance, Clean Architecture layer boundaries, package restrictions from ADR, and ADR-derived implementation rules.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: sonnet
 ---
 
 あなたはアーキテクチャリンターです。コード変更が以下の構造的ルールに準拠しているか静的チェックを行います。

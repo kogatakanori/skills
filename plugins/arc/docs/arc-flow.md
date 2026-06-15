@@ -18,23 +18,23 @@
 
 | エージェント | モデル | 役割 | 起動方式 |
 |-------------|--------|------|----------|
-| **spec-clarifier** | Opus | Why/Who/What/Use Cases/Constraints/Domain Modelの6軸で設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
-| **spec-reviewer** | Opus | 作成済みSpecを5観点でレビュー（完全性・ACテスト可能性・UC↔Goal整合・Constraints計測可能性・内部整合性）。CRITICALは人間確認、HIGHは自動修正 | Explore |
-| **design-clarifier** | Opus | Phase 1（Specのみ）: 踏襲型/変革型を判断し調査戦略を決定。Phase 2（調査結果後）: アーキテクチャ・データモデル・統合方式・テスト戦略のHOW判断をQ&Aで確認する | Explore |
-| **design-reviewer** | Opus | 作成済みDesignをSpecと照合し、Spec要件カバレッジ・トレーサビリティ完全性・Constraintガードレール・テスト戦略を検証する | Explore |
+| **spec-clarifier** | Sonnet | Why/Who/What/Use Cases/Constraints/Domain Modelの6軸で設計ツリーを展開。コードベース自律調査 + 推奨回答付きQ&Aリストを生成 | Explore |
+| **spec-reviewer** | Sonnet | 作成済みSpecを5観点でレビュー（完全性・ACテスト可能性・UC↔Goal整合・Constraints計測可能性・内部整合性）。CRITICALは人間確認、HIGHは自動修正 | Explore |
+| **design-clarifier** | Sonnet | Phase 1（Specのみ・Step 1.5）: 踏襲型/変革型を判断し調査戦略を決定。Phase 2（調査結果後・Step 2.5）: アーキテクチャ・データモデル・統合方式・テスト戦略のHOW判断をQ&Aで確認する | Explore |
+| **design-reviewer** | Sonnet | 作成済みDesignをSpecと照合し、Spec要件カバレッジ・トレーサビリティ完全性・Constraintガードレール・テスト戦略を検証する | Explore |
 | **codebase-analyst** | Sonnet | 踏襲型: 類似機能・パターン・再利用可能コンポーネントを調査。変革型: 変更対象実装・影響範囲を特定 | Explore |
 | **architecture-analyst** | Sonnet | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
 | **dependency-analyst** | Sonnet | ライブラリ・外部APIの存在とバージョン適合性・破壊的変更リスクを確認 | Explore |
 | **performance-analyst** | Sonnet | クエリパターン・キャッシュ設計・同時実行・スケーラビリティのパフォーマンス設計制約を調査 | Explore |
 | **security-analyst** | Sonnet | 認証・認可モデル・データ機密性・脅威ベクターのセキュリティ設計制約を特定 | Explore |
-| **web-research-analyst** | Opus | ライブラリのメンテ状況・セキュリティ・breaking changesをWeb検索で確認 | Explore（条件付き） |
-| **implementation-analyst** | Opus | 変更が必要な全ファイルとテスト要件を特定し、タスクの依存順序を整理 | Explore |
-| **quality-reviewer** | Opus | 命名・責務・重複・テスト適切性・複雑度をレビュー | Explore |
-| **architecture-linter** | Opus | TDD遵守・レイヤー境界・パッケージ制限・ADRルールを静的チェック | Explore |
-| **security-reviewer** | Opus | OWASP Top 10・認証・入力検証・機密データ露出をレビュー | Explore（条件付き） |
-| **architecture-reviewer** | Opus | 関心の分離・依存方向・ADR整合性・結合問題をレビュー | Explore（条件付き） |
-| **cicd-reviewer** | Opus | ビルド失敗・マイグレーション漏れ・デプロイ順序問題をレビュー | Explore（条件付き） |
-| **spec-coverage-reviewer** | Opus | Goal/Acceptance Criteria/Constraintsに対応するテストカバレッジを検証 | Explore |
+| **web-research-analyst** | Sonnet | ライブラリのメンテ状況・セキュリティ・breaking changesをWeb検索で確認 | Explore（条件付き） |
+| **implementation-analyst** | Sonnet | 変更が必要な全ファイルとテスト要件を特定し、タスクの依存順序を整理 | Explore |
+| **quality-reviewer** | Sonnet | 命名・責務・重複・テスト適切性・複雑度をレビュー | Explore |
+| **architecture-linter** | Sonnet | TDD遵守・レイヤー境界・パッケージ制限・ADRルールを静的チェック | Explore |
+| **security-reviewer** | Sonnet | OWASP Top 10・認証・入力検証・機密データ露出をレビュー | Explore（条件付き） |
+| **architecture-reviewer** | Sonnet | 関心の分離・依存方向・ADR整合性・結合問題をレビュー | Explore（条件付き） |
+| **cicd-reviewer** | Sonnet | ビルド失敗・マイグレーション漏れ・デプロイ順序問題をレビュー | Explore（条件付き） |
+| **spec-coverage-reviewer** | Sonnet | Goal/Acceptance Criteria/Constraintsに対応するテストカバレッジを検証 | Explore |
 
 ---
 
@@ -272,7 +272,7 @@ flowchart TD
     %% ─────────────────────────────
     subgraph DESIGN["🔧 arc-designing"]
         direction TB
-        dc["design-clarifier 【Steps 1.5/2.5 常時】\nPhase 1: 踏襲型/変革型の判断\nPhase 2: HOW判断Q&A（アーキテクチャ・データモデル等）"]
+        dc["design-clarifier\nStep 1.5 常時: Phase 1 踏襲型/変革型の判断\nStep 2.5 調査完了後: Phase 2 HOW判断Q&A"]
         cb["codebase-analyst 【Phase 2a 常時 並列①】\n踏襲型: 参考パターン・再利用コンポーネント調査\n変革型: 変更対象の既存実装・影響範囲を特定"]
         aa["architecture-analyst 【Phase 2a 常時 並列②】\nアーキテクチャ制約・既存docs・テスト基盤調査"]
         dep["dependency-analyst 【Phase 2a 常時 並列③】\nライブラリ・API存在確認・バージョン適合性\n破壊的変更リスク"]
