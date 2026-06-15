@@ -108,7 +108,8 @@ spec-reviewerの結果を受け取ったら：
 
 `../../templates/docs.md.template` を参照して `docs/<feature-name>.md` を生成する。
 
-フォーマットは `../../templates/docs-format.md` に従う。機能の概要・使い方・仕様を記述する（「何を・どう使うか」にフォーカス）。
+**ファイル名**: `docs/<feature-name>.md`（タイムスタンプ・Issue番号は不要。常に最新版を上書き）
+**記述内容**: 概要・使い方・仕様・ADR参照リンク（「何を・どう使うか」にフォーカス。Why・設計判断はIssueコメントに記録するため記述しない）
 
 ### Step 4: コミットと完全停止（人間の承認を待つ）
 
