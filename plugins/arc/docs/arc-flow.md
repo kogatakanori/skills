@@ -22,10 +22,11 @@
 | **spec-reviewer** | Opus | 作成済みSpecを5観点でレビュー（完全性・ACテスト可能性・UC↔Goal整合・Constraints計測可能性・内部整合性）。CRITICALは人間確認、HIGHは自動修正 | Explore |
 | **design-clarifier** | Opus | Phase 1（Specのみ）: 踏襲型/変革型を判断し調査戦略を決定。Phase 2（調査結果後）: アーキテクチャ・データモデル・統合方式・テスト戦略のHOW判断をQ&Aで確認する | Explore |
 | **design-reviewer** | Opus | 作成済みDesignをSpecと照合し、Spec要件カバレッジ・トレーサビリティ完全性・Constraintガードレール・テスト戦略を検証する | Explore |
-| **codebase-analyst** | Opus | 類似機能・競合コード・踏襲すべきパターンを調査（ADR・設計判断の文脈として利用） | Explore |
-| **architecture-analyst** | Opus | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
-| **dependency-analyst** | Opus | ライブラリ・外部APIの存在とバージョン適合性を確認 | Explore |
-| **conflict-analyst** | Opus | 既存コードとの競合・破壊的変更・パフォーマンス懸念を調査 | Explore |
+| **codebase-analyst** | Sonnet | 踏襲型: 類似機能・パターン・再利用可能コンポーネントを調査。変革型: 変更対象実装・影響範囲を特定 | Explore |
+| **architecture-analyst** | Sonnet | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
+| **dependency-analyst** | Sonnet | ライブラリ・外部APIの存在とバージョン適合性・破壊的変更リスクを確認 | Explore |
+| **performance-analyst** | Sonnet | クエリパターン・キャッシュ設計・同時実行・スケーラビリティのパフォーマンス設計制約を調査 | Explore |
+| **security-analyst** | Sonnet | 認証・認可モデル・データ機密性・脅威ベクターのセキュリティ設計制約を特定 | Explore |
 | **web-research-analyst** | Opus | ライブラリのメンテ状況・セキュリティ・breaking changesをWeb検索で確認 | Explore（条件付き） |
 | **implementation-analyst** | Opus | 変更が必要な全ファイルとテスト要件を特定し、タスクの依存順序を整理 | Explore |
 | **quality-reviewer** | Opus | 命名・責務・重複・テスト適切性・複雑度をレビュー | Explore |
@@ -48,7 +49,8 @@
 | codebase-analyst | | ✅ 常時 | | |
 | architecture-analyst | | ✅ 常時 | | |
 | dependency-analyst | | ✅ 常時 | | |
-| conflict-analyst | | ✅ 常時 | | |
+| performance-analyst | | ✅ 常時 | | |
+| security-analyst | | ✅ 常時 | | |
 | web-research-analyst | | 🔶 条件付き | | |
 | implementation-analyst | | | ✅ 常時 | |
 | quality-reviewer | | | | ✅ 常時 |
@@ -273,12 +275,13 @@ flowchart TD
     %% ─────────────────────────────
     subgraph DESIGN["🔧 arc-designing"]
         direction TB
-        D2a["Phase 2a ローカル調査（4並列）"]
+        D2a["Phase 2a ローカル調査（5並列）"]
         D2c["Phase 2c Web調査"]
-        cb["codebase-analyst\n類似機能・パターン調査\n（ADR・設計判断の文脈）"]
-        aa["architecture-analyst\nアーキテクチャ制約・docs調査\n（設計判断の前提）"]
-        dep["dependency-analyst\nライブラリ・API存在確認"]
-        con["conflict-analyst\n既存コード競合・破壊的変更"]
+        cb["codebase-analyst\n踏襲型: パターン・再利用コンポーネント調査\n変革型: 変更対象・影響範囲を特定"]
+        aa["architecture-analyst\nアーキテクチャ制約・docs・テスト基盤調査"]
+        dep["dependency-analyst\nライブラリ・API存在確認\n破壊的変更リスク"]
+        perf["performance-analyst\nクエリパターン・キャッシュ\n同時実行・スケーラビリティ"]
+        sec["security-analyst\n認証・認可モデル\nデータ機密性・脅威ベクター"]
         web["web-research-analyst\n不明項目がある場合のみ"]
         D15["Step 1.5 変更タイプ判断"]
         D25["Step 2.5 HOW判断Q&A"]
@@ -288,7 +291,8 @@ flowchart TD
         D2a -->|"常時 並列"| cb
         D2a -->|"常時 並列"| aa
         D2a -->|"常時 並列"| dep
-        D2a -->|"常時 並列"| con
+        D2a -->|"常時 並列"| perf
+        D2a -->|"常時 並列"| sec
         D2c -->|"🔶 条件付き"| web
         D15 -->|"常時"| dc
         D25 -->|"常時"| dc
@@ -374,7 +378,7 @@ flowchart TD
 
     subgraph DESIGN_FB["🔧 arc-designing の FB"]
         direction TB
-        inv["調査エージェント群（4並列 + Web条件付き）"]
+        inv["調査エージェント群（5並列 + Web条件付き）"]
         dc2["design-clarifier（HOW判断Q&A）"]
         HUD["👤 回答（推奨回答付き・1問ずつ）"]
         eval["設計作成（トレーサビリティ含む）"]

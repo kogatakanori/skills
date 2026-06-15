@@ -15,8 +15,8 @@ GitHub Issue
       │
       ▼
 /arc-specifying <N>
-  ├─ codebase-analyst       ┐
-  └─ architecture-analyst   ┘ 並列調査
+  ├─ spec-clarifier    Q&A
+  └─ spec-reviewer     品質チェック
       │
       │ specコメント ──────────────────────→ Issue
       │ docs/ ──────────────────────────→ リポジトリ
@@ -24,8 +24,11 @@ GitHub Issue
       │ ← Issueのspecコメントを確認・承認
       ▼
 /arc-designing
-  ├─ dependency-analyst     ┐
-  └─ conflict-analyst       ┘ 並列調査
+  ├─ codebase-analyst       ┐
+  ├─ architecture-analyst   │
+  ├─ dependency-analyst     │ 並列調査
+  ├─ performance-analyst    │
+  └─ security-analyst       ┘
       │
       │ investigationコメント ───────────→ Issue
       │
@@ -75,7 +78,8 @@ GitHub Issue
 GitHub Issue番号を受け取り、featureブランチを作成してspecをIssueコメントに投稿し、docsを生成する。
 
 - `gh issue view <N>` でIssueを取得
-- **codebase-analyst** と **architecture-analyst** を並列起動してコードベースを調査
+- **spec-clarifier** でWhy/Who/What/Use Cases/Constraints/Domain ModelのQ&Aを実施
+- **spec-reviewer** でSpec品質チェック（CRITICAL/HIGH/MEDIUM）
 - specを `<!-- arc:spec -->` 識別子付きでIssueコメントとして投稿
 - `docs/<feature-name>.md` を生成（何を・どう使うか）
 - 完了後、specコメントの確認を促して `/arc-designing` へ案内
@@ -85,7 +89,9 @@ GitHub Issue番号を受け取り、featureブランチを作成してspecをIss
 Issueのspecコメントを読み取り技術的実現性を調査し、調査結果をIssueコメントに投稿する。
 
 - IssueコメントからspecをAPIで取得
-- **dependency-analyst** と **conflict-analyst** を並列起動
+- **design-clarifier**（Phase 1）で踏襲型/変革型を判断して調査戦略を決定
+- **codebase-analyst**・**architecture-analyst**・**dependency-analyst**・**performance-analyst**・**security-analyst** を5並列起動
+- **design-clarifier**（Phase 2）でHOW判断Q&Aを実施
 - 実現性を3段階で判定：
   - `実現可能` — 制約なし、そのまま進める
   - `条件付き` — 特定の対応が必要だが実現できる
@@ -149,10 +155,18 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 
 | ファイル | 役割 | 利用スキル |
 |---|---|---|
-| codebase-analyst | 類似機能・踏襲すべきパターンを調査 | arc-specifying |
-| architecture-analyst | アーキテクチャ制約・テスト基盤を調査 | arc-specifying |
-| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性を確認 | arc-designing |
-| conflict-analyst | 既存コードとの競合・破壊的変更を調査 | arc-designing |
+| spec-clarifier | Why/Who/What/Use Cases/Constraints/Domain ModelのQ&A生成 | arc-specifying |
+| spec-reviewer | Spec完全性・AC・UC↔Goal整合・Constraints・内部整合性をレビュー | arc-specifying |
+| design-clarifier | Phase 1: 踏襲型/変革型判断。Phase 2: HOW判断Q&A | arc-designing |
+| design-reviewer | Spec要件カバレッジ・トレーサビリティ・Constraintガードレールをレビュー | arc-designing |
+| codebase-analyst | 踏襲型: パターン・再利用コンポーネント調査。変革型: 変更対象・影響範囲を特定 | arc-designing |
+| architecture-analyst | アーキテクチャ制約・テスト基盤を調査 | arc-designing |
+| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認 | arc-designing |
+| performance-analyst | パフォーマンス設計制約（クエリ・キャッシュ・同時実行）を調査 | arc-designing |
+| security-analyst | セキュリティ設計制約（認証・認可・データ機密性）を特定 | arc-designing |
+| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認 | arc-designing |
+| performance-analyst | パフォーマンス設計制約（クエリ・キャッシュ・同時実行）を調査 | arc-designing |
+| security-analyst | セキュリティ設計制約（認証・認可・データ機密性）を特定 | arc-designing |
 | implementation-analyst | 実装対象コードの詳細調査 | arc-planning |
 | security-reviewer | セキュリティレビュー | arc-implementing |
 | architecture-reviewer | アーキテクチャレビュー | arc-implementing |

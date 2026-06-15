@@ -64,9 +64,11 @@ design-clarifierが以下を判断する：
 
 **Agent B（architecture-analyst）**: `[specの全文]` を置換して起動（常に起動。アーキテクチャ制約・既存docs・テスト基盤を調査）
 
-**Agent C（dependency-analyst）**: `[specの全文]` を置換して起動（常に起動。ライブラリ・外部APIの存在・バージョン適合性を確認）
+**Agent C（dependency-analyst）**: `[specの全文]` を置換して起動（常に起動。ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認）
 
-**Agent D（risk-analyst）**: `[specの全文]` を置換して起動（常に起動。破壊的変更・パフォーマンスリスク・セキュリティ設計制約・テスト基盤を調査。変革型では特に網羅的に）
+**Agent D（performance-analyst）**: `[specの全文]` を置換して起動（常に起動。クエリパターン・キャッシュ設計・同時実行・スケーラビリティのパフォーマンス設計制約を調査）
+
+**Agent E（security-analyst）**: `[specの全文]` を置換して起動（常に起動。認証・認可モデル・データ機密性・脅威ベクターのセキュリティ設計制約を特定）
 
 #### Phase 2b: Web調査クエリの生成
 
@@ -190,8 +192,11 @@ Step 2.5 の DESIGN_DIRECTION と Step 3 の実現性評価をもとに、以下
 #### 依存関係（dependency-analyst）
 [ライブラリ・外部API確認結果]
 
-#### リスク分析（risk-analyst）
-[既存コードとの競合・パフォーマンス懸念]
+#### パフォーマンスリスク（performance-analyst）
+[クエリパターン・キャッシュ・同時実行・スケーラビリティの設計制約]
+
+#### セキュリティ設計制約（security-analyst）
+[認証・認可モデル・データ機密性・脅威ベクターの設計ガードレール]
 
 #### Web調査（web-research-analyst）
 [確認した内容 / または「スキップ（ローカル調査で十分）」]

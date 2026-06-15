@@ -1,6 +1,6 @@
 ---
 name: codebase-analyst
-description: Analyzes codebase to identify code patterns for a spec implementation. In 踏襲型 mode finds patterns to follow and components to reuse. In 変革型 mode identifies existing code that will be replaced or significantly changed. Does NOT investigate conflicts or breaking changes — those belong to conflict-analyst.
+description: Analyzes codebase to identify code patterns for a spec implementation. In 踏襲型 mode finds patterns to follow and components to reuse. In 変革型 mode identifies existing code that will be replaced or significantly changed. Does NOT investigate conflicts or breaking changes — those belong to dependency-analyst and performance-analyst.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
