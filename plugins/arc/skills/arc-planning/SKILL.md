@@ -10,16 +10,32 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 
 ## Workflow
 
-### Step 1: Spec・調査結果の自動取得
+### Step 0: sub-agent への委譲（メインコンテキスト保護）
 
-**ISSUE_NUM・REPOの取得（bash不要）**
+**このステップのみメインコンテキストで実行し、以降の全処理は sub-agent に委譲する。**
 
 1. `ISSUE_NUM`: システムプロンプトの `gitStatus` セクションに含まれる現在のブランチ名（例: `feature/issue-42-add-auth`）から正規表現 `issue-(\d+)` で抽出する。該当しない場合はユーザーに正しいブランチへ切り替えるよう案内して終了する。
 
-2. `REPO`: 以下のコマンドを単体で実行して取得する（worktree環境でも動作する）：
+2. `REPO`: 以下のコマンドを単体で実行して取得する：
    ```bash
    gh repo view --json nameWithOwner -q .nameWithOwner
    ```
+
+3. `Agent` ツールで sub-agent を spawn し、以下の prompt を渡す：
+   ```
+   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-planning のワークフローを Step 1 から実行してください。ISSUE_NUM・REPO はこの prompt の値を使用すること。
+   ```
+   `<N>`・`<owner/repo>` は上記で確定済みの値に置換する。
+
+4. sub-agent の完了を待ち、結果（Issue コメント URL・タスク一覧）をユーザーに表示して終了する。
+
+---
+
+### Step 1: Spec・調査結果の自動取得
+
+**ISSUE_NUM・REPOの取得**
+
+Step 0 の prompt で渡された `ISSUE_NUM` と `REPO` をそのまま使用する（bash での再取得は不要）。
 
 **Spec・調査結果の取得**（コマンドは1つずつ単体で実行し、`<REPO>` `<ISSUE_NUM>` は実際の値で置換する）:
 

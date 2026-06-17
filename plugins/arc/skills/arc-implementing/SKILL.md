@@ -97,6 +97,14 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
 
 どちらにも該当しない場合は、arc-specifyingで作成済みのブランチのまま実装を進める。
 
+### Step 1.5: Claude Code Task への登録
+
+Issue コメントから取得した全タスクを `TaskCreate` ツールで登録する（Claude Code UI のスピナーで進捗を表示するため）。
+
+- 各タスクの `subject` は `[test] <タスク説明>` / `[impl] <タスク説明>` の形式で登録する
+- 登録した Task の ID とタスク行の順序を対応づけてメモリに保持する（後の TaskUpdate で使用）
+- 全タスクは `pending` ステータスで登録される
+
 ### Step 2: TDD実装ループ（全タスク完了まで繰り返す）
 
 未完了タスク（`- [ ]`）を順番に処理する。
@@ -104,6 +112,8 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
 ---
 
 #### `[test]` タスクの処理
+
+タスク開始時に `TaskUpdate` で当該タスクのステータスを `in_progress` に更新する。
 
 **① テストコードを書く（Red phase）**
 - specのGoalとdocsの仕様に基づいてテストケースを設計する
@@ -114,20 +124,18 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
 - テストを実行してREDになることを確認する
 - テストが誤って通ってしまう場合はテストコードを修正する
 
-**③ tasksコメントを更新し、テストタスクをコミット**
+**③ テストタスクのコミット**
 - type-check を実行してエラーがないことを確認する（未実装シンボル由来の型エラーは許容する。それ以外のエラーがあればテストコードを修正する。検出できない場合はスキップする。最大2回修正しても解消しない場合はユーザーに報告する）
 - 検出したテストコマンドを実行して RED になることを最終確認する（検出できない場合はスキップする）
-- IssueのtasksコメントをPATCHして該当タスクを `- [x]` に更新する：
-  ```bash
-  gh api repos/${REPO}/issues/comments/${TASKS_COMMENT_ID} \
-    -X PATCH -f body="<更新後のtasks内容>"
-  ```
+- `TaskUpdate` で当該タスクのステータスを `completed` に更新する（Issue コメントの更新は全タスク完了後に一括実施）
 - `git commit -m "test: add tests for <task description> (#NNN)"`
 - ⑧へ進む
 
 ---
 
 #### `[impl]` タスクの処理
+
+タスク開始時に `TaskUpdate` で当該タスクのステータスを `in_progress` に更新する。
 
 **④ 実装コードを書く（Green phase）**
 - 直前の `[test]` タスクのテストをパスさせることだけにフォーカスする
@@ -147,21 +155,28 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
   ```
 - 既存の `## ADR` セクションがある場合（別Issueで作られた機能の修正時）は、新しい Issue 番号と URL に更新する
 
-**⑦ tasksコメントを更新し、実装タスクをコミット**
+**⑦ 実装タスクのコミット**
 - type-check を実行してエラーがないことを確認する（エラーがあれば実装コードを修正する。検出できない場合はスキップする。最大2回修正しても解消しない場合はユーザーに報告する）
 - 検出したテストコマンドを実行して全テストが GREEN になることを最終確認する（検出できない場合はスキップする）
-- IssueのtasksコメントをPATCHして該当タスクを `- [x]` に更新する：
-  ```bash
-  gh api repos/${REPO}/issues/comments/${TASKS_COMMENT_ID} \
-    -X PATCH -f body="<更新後のtasks内容>"
-  ```
+- `TaskUpdate` で当該タスクのステータスを `completed` に更新する（Issue コメントの更新は全タスク完了後に一括実施）
 - `git commit -m "feat: implement <task description> (#NNN)"`
 
 ---
 
 **⑧ 次の未完了タスクへ**
 - `- [ ]` のタスクが残っていれば、タスク種別（`[test]` or `[impl]`）を確認して①または④へ戻る
-- 全タスク完了したらStep 2.5へ
+- 全タスク完了したら⑨へ進む
+
+**⑨ Issue コメントを一括更新**
+
+全タスクの `- [ ]` を `- [x]` に書き換えた内容で Issue コメントを1回だけ PATCH する：
+
+```bash
+gh api repos/${REPO}/issues/comments/${TASKS_COMMENT_ID} \
+  -X PATCH -f body="<全タスクを [x] にした内容>"
+```
+
+その後 Step 2.5 へ。
 
 ### Step 2.5: 最終一括レビュー＋Specカバレッジチェック
 
@@ -290,4 +305,4 @@ worktreeを使用していない場合は何もしない（ブランチはPRマ�
 - テストコマンドが検出できない場合はスキップする
 - lint は PostToolUse hook の責務（Write/Edit ごと）、type-check・test は本ワークフロー③・⑨の責務（commit 直前）。型検査を hook に移さないこと
 - コミットメッセージはConventional Commits形式に従う（`feat/fix/test/docs:` プレフィックス）
-- `plans/` ディレクトリは使用しない（タスクの状態管理はIssueコメントで行う）
+- `plans/` ディレクトリは使用しない（タスクの状態管理は Claude Code Task 機能（UI内リアルタイム）と Issue コメント（全タスク完了後に一括更新）で行う）
