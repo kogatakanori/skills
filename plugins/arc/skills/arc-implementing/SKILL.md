@@ -52,7 +52,14 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
 
 該当する場合：
 
-1. `.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定であれば自動セットアップする：
+1. 既存 worktree の確認：
+   ```bash
+   ls .claude/worktrees/issue-<N> 2>/dev/null && echo exists || echo not_found
+   ```
+   - **`exists`** → `EnterWorktree` ツールで `path=".claude/worktrees/issue-<N>"` を指定して入る（以降の手順をスキップ）
+   - **`not_found`** → 2〜3 を実行する
+
+2. `.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定であれば自動セットアップする：
    1. `.claude/hooks/` ディレクトリを作成
    2. `../../templates/hooks/worktree-create.sh` を `.claude/hooks/worktree-create.sh` にコピー
    3. `../../templates/hooks/worktree-remove.sh` を `.claude/hooks/worktree-remove.sh` にコピー
@@ -65,10 +72,28 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
       }
       ```
 
-2. `EnterWorktree` ツールで `name=issue-<N>` を指定してworktreeを作成する
+3. `EnterWorktree` ツールで `name=issue-<N>` を指定してworktreeを新規作成する
    - `.worktreeinclude` に記載されたファイルが自動コピーされる
    - `WorktreeCreate` hook が自動実行される
    - 現在のセッションがworktree内に切り替わる
+
+4. worktree作成後、複雑度を判定して `.claude/worktree-setup.sh` を実行する：
+
+   **複雑度の判定：**
+   - `TASKS_CONTENT` または spec の内容から以下のいずれかに該当する場合 → `heavy`
+     - DB migration / schema 変更を含む
+     - Docker / インフラ構成の変更を含む
+     - 複数サービス間の連携が必要
+     - `<!-- setup: heavy -->` フラグが含まれる
+   - それ以外 → `light`
+
+   **スクリプトの実行：**
+   ```bash
+   # .claude/worktree-setup.sh が存在する場合のみ実行
+   [ -f .claude/worktree-setup.sh ] && bash .claude/worktree-setup.sh "<complexity>"
+   ```
+   - スクリプトが存在しない場合はスキップ（エラーにしない）
+   - `<complexity>` には判定結果（`light` または `heavy`）を渡す
 
 どちらにも該当しない場合は、arc-specifyingで作成済みのブランチのまま実装を進める。
 
@@ -98,7 +123,7 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
     -X PATCH -f body="<更新後のtasks内容>"
   ```
 - `git commit -m "test: add tests for <task description> (#NNN)"`
-- ⑩へ進む
+- ⑧へ進む
 
 ---
 
@@ -112,42 +137,7 @@ spec（意図）・design（ADR・スコープ）・docsも読み込んで実装
 - テストが全てGREENになることを確認する
 - 失敗した場合は実装を修正して⑤を繰り返す
 
-**⑥ 専門レビューエージェントを選択・並列起動**
-
-`git diff HEAD` を実行してdiffと変更ファイル一覧を取得する：
-
-```bash
-DIFF=$(git diff HEAD)
-CHANGED_FILES=$(git diff HEAD --name-only)
-CHANGED_COUNT=$(echo "$CHANGED_FILES" | grep -c .)
-NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
-```
-
-変更ファイル一覧を以下のルールで照合し、起動するエージェントを決定する：
-
-| エージェント | 起動条件 |
-|---|---|
-| **quality-reviewer** | 常に起動 |
-| **architecture-linter** | 常に起動（ADRとの整合性チェック） |
-| **security-reviewer** | `CHANGED_FILES` に（**大文字小文字を区別せず**）`auth\|login\|password\|token\|jwt\|session\|permission\|oauth\|api/\|route\|controller\|handler\|sql\|query\|repository\|validator\|middleware\|sanitize\|secret\|crypto\|hash\|serial\|upload\|billing\|payment` のいずれかを含む場合 |
-| **architecture-reviewer** | `CHANGED_COUNT` が3以上 OR `NEW_FILES` が**2件以上** OR `CHANGED_FILES` に `service\|domain\|infra\|repository\|module\|core\|gateway\|usecase\|adapter` のいずれかを含む場合 |
-| **cicd-reviewer** | `CHANGED_FILES` に（**大文字小文字を区別せず**）`.github/\|.gitlab-ci\|Jenkinsfile\|.circleci\|migration\|migrate\|schema\|\.env\|config/\|settings\|package\.json\|package-lock\|yarn\.lock\|pnpm-lock\|poetry\.lock\|Pipfile\.lock\|pyproject\.toml\|requirements\.txt\|Cargo\.toml\|go\.mod\|Makefile\|Dockerfile\|docker-compose\|terraform/\|\.tf\|k8s/\|kubernetes/\|helm/\|ansible/\|bitbucket-pipelines` のいずれかを含む場合 |
-
-起動対象と判定したエージェントファイルを Read し、対応するプレースホルダーを置換して**同時に**起動する：
-
-- **`../../agents/quality-reviewer.md`** (常時): `[git diff HEAD の出力]` を置換
-- **`../../agents/architecture-linter.md`** (常時): `[git diff HEAD の出力]` と `[designコメントのADRセクション]` を置換（`DESIGN_CONTENT`の`### ADR`セクション部分を渡す）
-- **`../../agents/security-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
-- **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[designコメントのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換（ADRは`DESIGN_CONTENT`から）
-- **`../../agents/cicd-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
-
-**⑦ 指摘の統合と修正**
-- 全エージェントの指摘を統合する
-- CRITICAL/HIGHの指摘は必ず修正する（architecture-linterのCRITICALはADR違反なので最優先で修正）
-- MEDIUM/LOWの指摘は修正が適切かを判断して対応する
-- 修正後は⑤へ戻ってテストをパスすることを確認する（最大2回まで。解消できない場合はユーザーに報告して判断を仰ぐ）
-
-**⑧ Docsの更新**
+**⑥ Docsの更新**
 - 実装した機能に合わせて `docs/` の該当ファイルを更新する
 - 仕様の変更・追加があれば反映する
 - `## ADR` セクションが存在しない場合は末尾に追加する（`ISSUE_URL` は Step 1 で取得済み）：
@@ -157,7 +147,7 @@ NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
   ```
 - 既存の `## ADR` セクションがある場合（別Issueで作られた機能の修正時）は、新しい Issue 番号と URL に更新する
 
-**⑨ tasksコメントを更新し、実装タスクをコミット**
+**⑦ tasksコメントを更新し、実装タスクをコミット**
 - type-check を実行してエラーがないことを確認する（エラーがあれば実装コードを修正する。検出できない場合はスキップする。最大2回修正しても解消しない場合はユーザーに報告する）
 - 検出したテストコマンドを実行して全テストが GREEN になることを最終確認する（検出できない場合はスキップする）
 - IssueのtasksコメントをPATCHして該当タスクを `- [x]` に更新する：
@@ -169,7 +159,7 @@ NEW_FILES=$(git diff HEAD --name-only --diff-filter=A)
 
 ---
 
-**⑩ 次の未完了タスクへ**
+**⑧ 次の未完了タスクへ**
 - `- [ ]` のタスクが残っていれば、タスク種別（`[test]` or `[impl]`）を確認して①または④へ戻る
 - 全タスク完了したらStep 2.5へ
 
@@ -191,18 +181,24 @@ FULL_NEW_FILES=$(git diff "${BASE}" --name-only --diff-filter=A)
 
 **2.5-A: 既存レビューエージェント（横断チェック）**
 
-⑥のフィルタリングルール表を参照してエージェントを選択し、**spec-coverage-reviewerと同時に**起動する。判定変数の対応は以下の通り：
+以下のフィルタリングルールでエージェントを選択し、**spec-coverage-reviewerと同時に**起動する：
 
-| ⑥の変数名 | Step 2.5 での対応変数 |
+| エージェント | 起動条件 |
 |---|---|
-| `CHANGED_FILES` | `FULL_CHANGED_FILES` |
-| `CHANGED_COUNT` | `FULL_CHANGED_COUNT` |
-| `NEW_FILES` | `FULL_NEW_FILES` |
+| **quality-reviewer** | 常に起動 |
+| **architecture-linter** | 常に起動（ADRとの整合性チェック） |
+| **security-reviewer** | `FULL_CHANGED_FILES` に（**大文字小文字を区別せず**）`auth\|login\|password\|token\|jwt\|session\|permission\|oauth\|api/\|route\|controller\|handler\|sql\|query\|repository\|validator\|middleware\|sanitize\|secret\|crypto\|hash\|serial\|upload\|billing\|payment` のいずれかを含む場合 |
+| **architecture-reviewer** | `FULL_CHANGED_COUNT` が3以上 OR `FULL_NEW_FILES` が**2件以上** OR `FULL_CHANGED_FILES` に `service\|domain\|infra\|repository\|module\|core\|gateway\|usecase\|adapter` のいずれかを含む場合 |
+| **cicd-reviewer** | `FULL_CHANGED_FILES` に（**大文字小文字を区別せず**）`.github/\|.gitlab-ci\|Jenkinsfile\|.circleci\|migration\|migrate\|schema\|\.env\|config/\|settings\|package\.json\|package-lock\|yarn\.lock\|pnpm-lock\|poetry\.lock\|Pipfile\.lock\|pyproject\.toml\|requirements\.txt\|Cargo\.toml\|go\.mod\|Makefile\|Dockerfile\|docker-compose\|terraform/\|\.tf\|k8s/\|kubernetes/\|helm/\|ansible/\|bitbucket-pipelines` のいずれかを含む場合 |
 
 各エージェントのプレースホルダーは以下の通り置換する：
 - `[git diff HEAD の出力]` → `FULL_DIFF` の内容（**PRブランチ全体のdiff**。エージェント起動時の指示にも「このdiffはPR全体の累積差分です」と明記してコンテキストを正確に伝える）
 - `[designコメントのADRセクション]` → `DESIGN_CONTENT` の `### ADR` セクション部分（Step 1で取得済み）
-- その他のプレースホルダーは⑥と同様
+- **`../../agents/quality-reviewer.md`** (常時): `[git diff HEAD の出力]` を置換
+- **`../../agents/architecture-linter.md`** (常時): `[git diff HEAD の出力]` と `[designコメントのADRセクション]` を置換
+- **`../../agents/security-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
+- **`../../agents/architecture-reviewer.md`** (条件該当時): `[git diff HEAD の出力]`・`[designコメントのADRセクション]`・`[観察された主要なアーキテクチャパターン]` を置換
+- **`../../agents/cicd-reviewer.md`** (条件該当時): `[git diff HEAD の出力]` と `[specの内容]` を置換
 
 **2.5-B: Specカバレッジチェック（常に実行）**
 
@@ -210,7 +206,7 @@ FULL_NEW_FILES=$(git diff "${BASE}" --name-only --diff-filter=A)
 - `[specの内容]` → SPEC_CONTENTの内容
 - `[PRブランチのdiffの内容]` → FULL_DIFFの内容
 
-**⑥ですでに検出・修正した指摘の重複は無視してよい。** 最終レビューの目的はタスク間をまたぐ横断的な問題（全タスクの組み合わせで生じる不整合・セキュリティ上の見落とし等）の検出である。
+最終レビューの目的はタスク間をまたぐ横断的な問題（全タスクの組み合わせで生じる不整合・セキュリティ上の見落とし等）の検出である。
 
 **カバレッジチェックの結果の処理**:
 
