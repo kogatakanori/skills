@@ -12,7 +12,7 @@ Specは全開発の土台。**最初に意図を明確にしてから書く**。
 
 ## Workflow
 
-### Step 0: Readパーミッション設定チェック
+### Step 1: Readパーミッション設定チェック
 
 arcプラグインはプロジェクト外のパスにあるため、プロジェクト設定（`.claude/settings.json`）では許可できない。グローバル設定（`~/.claude/settings.json`）の `permissions.allow` 配列にarcプラグインのルートパスを含むエントリ（`~/...arc.../**` のようなパターン）が存在しない場合、以下を自動セットアップする：
 
@@ -26,7 +26,7 @@ arcプラグインはプロジェクト外のパスにあるため、プロジ�
 
 arcルートへのReadパーミッションが既に設定済みの場合はこのステップをスキップする。
 
-### Step 1: Issue取得とブランチ作成
+### Step 2: Issue取得とブランチ作成
 
 1. Issue情報を取得する：
    ```bash
@@ -43,7 +43,7 @@ arcルートへのReadパーミッションが既に設定済みの場合はこ�
    git checkout -b issue-<N>
    ```
 
-### Step 1.5: spec-clarifierによる設計ツリーの明確化
+### Step 3: spec-clarifierによる設計ツリーの明確化
 
 Issue取得直後に `../../agents/spec-clarifier.md` を Read し、`[issueまたはspecの内容]` をIssueの全文（タイトル＋本文）で置換してExploreエージェントを起動する。
 
@@ -63,22 +63,22 @@ Q1. [質問内容]
 ユーザーは「はい（推奨通り）」「いいえ（○○にしたい）」「別の理由で〜」等と答える。
 回答を受け取ったら次の質問へ進む。質問リストを全て消化するか、意図が十分に明確になったら次へ進む。
 
-**「明確化の必要なし」と返ってきた場合**、または全質問を消化したら即座にStep 2へ。
+**「明確化の必要なし」と返ってきた場合**、または全質問を消化したら即座にStep 4へ。
 
-得られた全ての回答（調査結果＋ユーザー確認結果）を「明確化されたコンテキスト」として記録し、Step 2以降に活用する。
+得られた全ての回答（調査結果＋ユーザー確認結果）を「明確化されたコンテキスト」として記録し、Step 4以降に活用する。
 
 **⚠️ 注意**: spec-clarifierはWhy/Who/What/Use Cases/Constraints/Domain Modelのみを明確化する。Scope（境界）・実装アプローチ・技術選択は一切聞かない。
 
-### Step 2: Spec作成と投稿
+### Step 4: Spec作成と投稿
 
-Step 1.5の明確化されたコンテキストをもとに、`../../templates/spec.md.template` を参照しながらSpecを作成する。
+Step 3の明確化されたコンテキストをもとに、`../../templates/spec.md.template` を参照しながらSpecを作成する。
 
 重要な点：
 - **Context（Why）**: Issueの背景・解決する課題を明確に記述
 - **Who（誰が使うか）**: 役割・技術レベル・利用文脈を記述（spec-clarifierのWho確認結果を反映）
 - **Goal**: 「〜できる」「〜になる」形式で達成可能なアウトカムを記述
 - **Use Cases**: GoalをどのようなシナリオでUserが利用するかを具体的に記述（UC-1, UC-2形式）
-- **Acceptance Criteria**: 各Goalに対してビジネス視点での完了条件（Step 1.5の明確化で得た合意内容を反映）
+- **Acceptance Criteria**: 各Goalに対してビジネス視点での完了条件（Step 3の明確化で得た合意内容を反映）
 - **Constraints**: ビジネスルール・不変条件・品質の下限（予算・法律・UX・応答速度など。HOWには踏み込まない）
 - **Domain Model**: この機能で登場するエンティティ・概念の定義（spec-clarifierの調査で確認した既存用語を反映）
 
@@ -94,24 +94,24 @@ EOF
 )"
 ```
 
-### Step 2.5: spec-reviewerによるSpec品質チェック
+### Step 5: spec-reviewerによるSpec品質チェック
 
 `../../agents/spec-reviewer.md` を Read し、`[specの内容]` を作成したSpecの内容で置換してExploreエージェントを起動する。
 
 spec-reviewerの結果を受け取ったら：
-- **問題なし**: 即座にStep 3（Docs生成）へ進む
-- **MEDIUM指摘**: 改善推奨として記録し、Specを修正してからStep 3へ進む
-- **HIGH指摘**: Specを自動修正してStep 2.5を再実行する（最大2回）
+- **問題なし**: 即座にStep 6（Docs生成）へ進む
+- **MEDIUM指摘**: 改善推奨として記録し、Specを修正してからStep 6へ進む
+- **HIGH指摘**: Specを自動修正してStep 5を再実行する（最大2回）
 - **CRITICAL指摘**: `AskUserQuestion` でユーザーに確認を求める（根本矛盾のため自動修正不可）
 
-### Step 3: Docsファイル生成
+### Step 6: Docsファイル生成
 
 `../../templates/docs.md.template` を参照して `docs/<feature-name>.md` を生成する。
 
 **ファイル名**: `docs/<feature-name>.md`（タイムスタンプ・Issue番号は不要。常に最新版を上書き）
 **記述内容**: 概要・使い方・仕様・ADR参照リンク（「何を・どう使うか」にフォーカス。Why・設計判断はIssueコメントに記録するため記述しない）
 
-### Step 4: コミットと完全停止（人間の承認を待つ）
+### Step 7: コミットと完全停止（人間の承認を待つ）
 
 ```bash
 git add docs/
@@ -146,7 +146,7 @@ git commit -m "spec: add docs for issue #NNN - <title>"
 
 - `../../agents/spec-clarifier.md` を Read し、`[issueまたはspecの内容]` を「現在のspec内容 + ユーザーの修正コメント」に置換してExploreエージェントを起動する
 - spec-clarifierが設計ツリーを再展開し、修正に関わる決定事項を特定・調査して残った質問リストを返す
-- Step 1.5と同じフォーマット（推奨回答付き）で1問ずつ聞く
+- Step 3と同じフォーマット（推奨回答付き）で1問ずつ聞く
 - 修正意図が明確になったら次のフェーズへ
 
 **フェーズ2: まとめた修正提案**
@@ -166,7 +166,7 @@ git commit -m "spec: add docs for issue #NNN - <title>"
      gh api repos/<REPO>/issues/comments/<COMMENT_ID> -X PATCH -f body="<更新後のspec全文>"
      ```
 - `docs/` ファイルも必要に応じて更新してコミットする
-- 再度 Step 5 の完全停止メッセージを表示して承認を待つ
+- 再度 Step 7 の完全停止メッセージを表示して承認を待つ
 
 ## Notes
 

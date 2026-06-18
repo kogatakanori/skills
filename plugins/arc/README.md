@@ -4,7 +4,7 @@ GitHub IssueからPRまでをAIが自律的に推進するSDLCワークフロー
 
 ## 概要
 
-Arcは4つのスキルで構成され、仕様策定・技術調査・タスク計画・TDD実装を一貫して自動化します。ユーザーが関与するのは「specの承認」「調査結果の確認」「PR pushの承認」の3点のみです。
+Arcは5つのスキルで構成され（コアスキル4つ＋メンテナンス1つ）、仕様策定・技術調査・タスク計画・TDD実装を一貫して自動化します。ユーザーが関与するのは「specの承認」「調査結果の方向性確認」「カバレッジ確認（CRITICAL/HIGH指摘時のみ）」「PR pushの承認」の4点のみです。
 
 spec・plan・taskはGitHub Issueのコメントとして管理します。実装した機能のドキュメントのみ `docs/` ファイルとして保存します。PRに `Closes #NNN` を記載するため、マージ時にIssueは自動でクローズされます。
 
@@ -30,7 +30,7 @@ GitHub Issue
   ├─ performance-analyst    │
   └─ security-analyst       ┘
       │
-      │ investigationコメント ───────────→ Issue
+      │ designコメント（<!-- arc:design -->）──→ Issue
       │
       │ ← 調査結果を確認し方向性を決定
       ▼
@@ -43,15 +43,19 @@ GitHub Issue
       ▼
 /arc-implementing
   ループ: 未完了タスクがある間
+  ペアごとにサブエージェントで実装（[test]+[impl] = 1サブエージェント）
   ├─ [test] テストコードを書く（Red）
-  └─ [impl] 実装する（Green）
-       ├─ security-reviewer       ┐
-       ├─ architecture-reviewer   │
-       ├─ quality-reviewer        ┘ 並列レビュー
-       └─ cicd-reviewer
+  └─ [impl] 実装する（Green）+ type-check/lint スクリプト実行
        │
-       └─ tasksコメント更新 ───────────→ Issue
        └─ docs/（ADRセクションにIssue番号）
+  全ペア完了後 → tasksコメント一括更新 ────→ Issue
+  └─ Step 4 レビューサブエージェント
+       ├─ quality-reviewer        ┐
+       ├─ architecture-linter     │ 常時
+       ├─ spec-coverage-reviewer  ┘
+       ├─ security-reviewer       ┐
+       ├─ architecture-reviewer   │ 条件付き
+       └─ cicd-reviewer           ┘
       │
       │ ← git push / PR作成の承認
       ▼
@@ -90,12 +94,13 @@ Issueのspecコメントを読み取り技術的実現性を調査し、調査�
 
 - IssueコメントからspecをAPIで取得
 - **design-clarifier**（Phase 1）で踏襲型/変革型を判断して調査戦略を決定
-- **codebase-analyst**・**architecture-analyst**・**dependency-analyst**・**performance-analyst**・**security-analyst** を5並列起動
+- **codebase-analyst**・**architecture-analyst**・**dependency-analyst** を常時起動、**performance-analyst**・**security-analyst** をSpecのキーワードに応じて条件付き起動（最大5並列）
 - **design-clarifier**（Phase 2）でHOW判断Q&Aを実施
 - 実現性を3段階で判定：
   - `実現可能` — 制約なし、そのまま進める
   - `条件付き` — 特定の対応が必要だが実現できる
-  - `実現困難` — 根本的な問題あり、代替案を提示してspecコメントの修正を促す
+  - `実現困難` — 根本的な問題あり、代替案を2案以上提示してHOW（アプローチ）の変更を促す（SpecのGoal/Constraintsは変更しない）
+- **design-reviewer** でDesign品質チェック（Spec要件カバレッジ・トレーサビリティ・Constraintガードレール）を実施
 - 調査結果を `<!-- arc:design -->` 識別子付きでIssueコメントとして投稿
 - 完了後、方向性の確認を促して `/arc-planning` へ案内
 
@@ -118,25 +123,28 @@ specをTDDタスクリストに分解し、品質確認後にIssueコメント�
 
 ローカルの `.claude/worktrees/issue-*` を一覧表示し、対応するPRがマージ済みのworktreeを削除する。
 
-- `git worktree list` でローカルのworktreeを取得
+- `git worktree list --porcelain` でローカルのworktreeを取得
 - 各worktreeのブランチに対応するPRのマージ状態を `gh pr list` で確認
 - マージ済みのworktreeを確認後に `git worktree remove` と `git branch -d` で削除
 - 未マージのworktreeはそのまま保持
 
 ### `/arc-implementing`
 
-TDDで全タスクを自律実装し、専門レビューFBループ後にPRを作成する。
+TDDで全タスクを自律実装し、最終横断レビュー後にPRを作成する。
 
-- IssueコメントからtasksとspecをAPIで取得
-- タスク完了のたびにtasksコメントをPATCH更新（`- [ ]` → `- [x]`）
-- 各 `[impl]` タスクの実装後に4種の専門レビューエージェントを並列起動：
+- IssueコメントからtasksとspecをAPIで取得（spec+designはサブエージェントプロンプトに埋め込む）
+- `[test]`+`[impl]` ペアごとにサブエージェントを起動（各サブエージェントは実装 + type-check/lint スクリプトのみ実行）
+- 全ペア完了後にtasksコメントを一括PATCH更新（`- [ ]` → `- [x]`）
+- 全タスク完了後にStep 4レビューサブエージェントを起動：
 
-| エージェント | レビュー観点 |
-|---|---|
-| security-reviewer | 脆弱性・インジェクション・認証 |
-| architecture-reviewer | ADRとの整合性・設計パターン |
-| quality-reviewer | コード品質・可読性・テストカバレッジ |
-| cicd-reviewer | CI/CD設定・デプロイ・インフラ |
+| エージェント | 起動条件 | レビュー観点 |
+|---|---|---|
+| quality-reviewer | 常時 | コード品質・可読性 |
+| architecture-linter | 常時 | TDD遵守・レイヤー境界・ADRルール |
+| spec-coverage-reviewer | 常時 | Goal/AC/Constraintsのテストカバレッジ |
+| security-reviewer | 条件付き | 脆弱性・インジェクション・認証 |
+| architecture-reviewer | 条件付き | ADRとの整合性・設計パターン |
+| cicd-reviewer | 条件付き | CI/CD設定・デプロイ・インフラ |
 
 - `docs/` ファイルの `## ADR` セクションにIssue番号を記載
 - PRボディに `Closes #NNN` と `## Spec / ADR` セクションを記載してIssueを参照
@@ -165,16 +173,18 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 | performance-analyst | パフォーマンス設計制約（クエリ・キャッシュ・同時実行）を調査 | arc-designing |
 | security-analyst | セキュリティ設計制約（認証・認可・データ機密性）を特定 | arc-designing |
 | implementation-analyst | 実装対象コードの詳細調査 | arc-planning |
-| security-reviewer | セキュリティレビュー | arc-implementing |
-| architecture-reviewer | アーキテクチャレビュー | arc-implementing |
-| quality-reviewer | コード品質レビュー | arc-implementing |
-| cicd-reviewer | CI/CDレビュー | arc-implementing |
+| quality-reviewer | コード品質レビュー（命名・責務・重複・複雑度） | arc-implementing |
+| architecture-linter | TDD遵守・レイヤー境界・ADRルールの静的チェック | arc-implementing |
+| spec-coverage-reviewer | Goal/AC/Constraintsのテストカバレッジ検証 | arc-implementing |
+| security-reviewer | セキュリティレビュー（条件付き） | arc-implementing |
+| architecture-reviewer | アーキテクチャレビュー（条件付き） | arc-implementing |
+| cicd-reviewer | CI/CDレビュー（条件付き） | arc-implementing |
 
 ## セットアップ（推奨）
 
 ### Worktree設定
 
-`/arc-specifying` 実行時に `EnterWorktree` でworktreeが作成されます。初回実行時に hooks が自動セットアップされますが、カスタマイズする場合は以下を参考にしてください。
+`/arc-implementing` 実行時（またはarc-planningからの自動移行時）にworktreeが作成されます。初回実行時に hooks が自動セットアップされますが、カスタマイズする場合は以下を参考にしてください。
 
 **`.worktreeinclude`**（プロジェクトルートに配置）
 
@@ -185,7 +195,7 @@ worktree作成時にコピーするファイルを列挙する。ただし `Work
 .env.local
 ```
 
-以下のスクリプトはarcプラグインの `templates/hooks/` に収録されており、`/arc-specifying` の初回実行時にプロジェクトの `.claude/hooks/` へ自動コピーされます。カスタマイズする場合は以下を参考にしてください。
+以下のスクリプトはarcプラグインの `templates/hooks/` に収録されており、`/arc-implementing` の初回実行時にプロジェクトの `.claude/hooks/` へ自動コピーされます。カスタマイズする場合は以下を参考にしてください。
 
 **`.claude/hooks/worktree-create.sh`**
 
