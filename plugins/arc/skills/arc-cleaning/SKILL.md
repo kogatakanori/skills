@@ -1,6 +1,6 @@
 ---
 name: arc-cleaning
-description: Scans local worktrees created by arc-specifying, checks if their corresponding PRs are merged on GitHub, and removes merged worktrees and branches. Run periodically to keep the workspace clean. Part of the Arc SDLC workflow.
+description: Scans local worktrees created by arc-implementing, checks if their corresponding PRs are merged on GitHub, and removes merged worktrees and branches. Run periodically to keep the workspace clean. Part of the Arc SDLC workflow.
 user_invocable: true
 ---
 

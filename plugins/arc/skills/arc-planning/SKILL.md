@@ -10,7 +10,7 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 
 ## Workflow
 
-### Step 0: sub-agent への委譲（メインコンテキスト保護）
+### Step 1: sub-agent への委譲（メインコンテキスト保護）
 
 **このステップのみメインコンテキストで実行し、以降の全処理は sub-agent に委譲する。**
 
@@ -31,11 +31,11 @@ specをTDDタスクに分解し、自律レビューFBループで品質を確�
 
 ---
 
-### Step 1: Spec・調査結果の自動取得
+### Step 2: Spec・調査結果の自動取得
 
 **ISSUE_NUM・REPOの取得**
 
-Step 0 の prompt で渡された `ISSUE_NUM` と `REPO` をそのまま使用する（bash での再取得は不要）。
+Step 1 の prompt で渡された `ISSUE_NUM` と `REPO` をそのまま使用する（bash での再取得は不要）。
 
 **Spec・調査結果の取得**（コマンドは1つずつ単体で実行し、`<REPO>` `<ISSUE_NUM>` は実際の値で置換する）:
 
@@ -49,13 +49,13 @@ gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | star
 
 `<!-- arc:design -->` コメントが存在しない場合は、`/arc-designing` を先に実行するよう案内して終了。
 
-### Step 2: 実装対象コードの詳細調査
+### Step 3: 実装対象コードの詳細調査
 
 `../../agents/implementation-analyst.md` を Read し、`[specの内容]` と `[docsの内容]` を実際の内容で置換して、Exploreエージェントを起動する。
 
 docsの内容は `docs/` ディレクトリから対応ファイルを読み取る。
 
-### Step 3: TDDタスク分解
+### Step 4: TDDタスク分解
 
 調査結果をもとにタスクを分解する。各タスクは以下の規則に従う：
 
@@ -74,7 +74,7 @@ docsの内容は `docs/` ディレクトリから対応ファイルを読み取�
 
 `../../templates/tasks.md.template` を参照してタスクリストの初版を作成する。
 
-### Step 3.5: Goal→タスクのトレーサビリティマトリックス作成
+### Step 5: Goal→タスクのトレーサビリティマトリックス作成
 
 specのGoalおよびAcceptance Criteriaと、作成したタスクを紐付けるマトリックスを作成する：
 
@@ -90,7 +90,7 @@ specのGoalおよびAcceptance Criteriaと、作成したタスクを紐付け�
 
 このマトリックスはタスクコメントの先頭に含める。
 
-### Step 4: 自律タスクレビューFBループ
+### Step 6: 自律タスクレビューFBループ
 
 以下の品質観点でタスクリストをレビューし、問題があれば修正する（最大3回繰り返す）：
 
@@ -104,7 +104,7 @@ specのGoalおよびAcceptance Criteriaと、作成したタスクを紐付け�
 
 **重要**: Goal/ACに対応するタスクがないことはFBループの最優先修正対象とする。
 
-### Step 4.5: worktree使用有無の判断
+### Step 7: worktree使用有無の判断
 
 タスク数と内容から、実装フェーズでworktreeを使用するかを判断する。
 
@@ -115,7 +115,7 @@ specのGoalおよびAcceptance Criteriaと、作成したタスクを紐付け�
 
 上記に該当する場合は `WORKTREE_NEEDED=true`、該当しない場合は `WORKTREE_NEEDED=false` として記録する。
 
-### Step 5: タスクリストをIssueコメントに投稿
+### Step 8: タスクリストをIssueコメントに投稿
 
 品質基準を満たしたタスクリストをIssueコメントとして投稿する。`WORKTREE_NEEDED` の値をメタデータとして先頭行に含める：
 
@@ -132,7 +132,7 @@ EOF
 
 タスク一覧を出力して確認できるようにする。
 
-### Step 6: 実装フェーズへ自動移行
+### Step 9: 実装フェーズへ自動移行
 
 人間の介入なしに実装フェーズへ移行する：
 
@@ -141,7 +141,7 @@ EOF
    ```
    ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。WORKTREE_NEEDED=<true/false>。ISSUE_NUM・REPO・WORKTREE_NEEDED はこの prompt の値を使用すること。
    ```
-   `<N>`・`<owner/repo>`・`<true/false>` は Step 1 および Step 4.5 で確定済みの値に置換する。
+   `<N>`・`<owner/repo>`・`<true/false>` は Step 1 および Step 7 で確定済みの値に置換する。
 
 ## Notes
 

@@ -37,7 +37,7 @@ gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | star
 
 Specが空の場合は、`/arc-specifying <N>` を先に実行するよう案内して終了。
 
-### Step 1.5: design-clarifier【Phase 1】変更タイプの判断
+### Step 2: design-clarifier【Phase 1】変更タイプの判断
 
 `../../agents/design-clarifier.md` を Read し、`[specの内容]` を SPEC_CONTENT で置換し、`[調査結果の要約]` は**空のまま**にしてExploreエージェントを起動する。
 
@@ -49,9 +49,9 @@ design-clarifierが以下を判断する：
 
 判断が曖昧な場合はdesign-clarifierが1問生成するので、ユーザーに確認してからStep 2へ進む。
 
-**⚠️ 仮にCHANGE_TYPEの判断が誤っていても、Step 2.5のQ&Aで修正できる。ここで完璧を求めない。**
+**⚠️ 仮にCHANGE_TYPEの判断が誤っていても、Step 4のQ&Aで修正できる。ここで完璧を求めない。**
 
-### Step 2: 並列技術調査
+### Step 3: 並列技術調査
 
 #### Phase 2a: ローカル調査（CHANGE_TYPEに応じて構成変更）
 
@@ -65,9 +65,9 @@ design-clarifierが以下を判断する：
 
 **Agent C（dependency-analyst）**: `[specの全文]` を置換して起動（常に起動。ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認）
 
-**Agent D（performance-analyst）**: `[specの全文]` を置換して起動（常に起動。クエリパターン・キャッシュ設計・同時実行・スケーラビリティのパフォーマンス設計制約を調査）
+**Agent D（performance-analyst）**: Specに「パフォーマンス|スケール|レイテンシ|キャッシュ|同時|大量」のいずれかを含む場合のみ起動。`[specの全文]` を置換して起動（クエリパターン・キャッシュ設計・同時実行・スケーラビリティのパフォーマンス設計制約を調査）
 
-**Agent E（security-analyst）**: `[specの全文]` を置換して起動（常に起動。認証・認可モデル・データ機密性・脅威ベクターのセキュリティ設計制約を特定）
+**Agent E（security-analyst）**: Specに「認証|認可|ログイン|パスワード|API|ユーザー|権限|トークン」のいずれかを含む場合のみ起動。`[specの全文]` を置換して起動（認証・認可モデル・データ機密性・脅威ベクターのセキュリティ設計制約を特定）
 
 #### Phase 2b: Web調査クエリの生成
 
@@ -94,7 +94,7 @@ Phase 2cの後、全エージェントの結果を照合し、依然として`�
 
 ユーザーの回答を踏まえて該当項目の判定を更新し、Step 3へ進む。
 
-### Step 2.5: design-clarifier【Phase 2】HOW判断のQ&A
+### Step 4: design-clarifier【Phase 2】HOW判断のQ&A
 
 `../../agents/design-clarifier.md` を Read する。以下のプレースホルダーを置換してExploreエージェントを起動する：
 - `[specの内容]` → SPEC_CONTENTの内容
@@ -111,11 +111,11 @@ Q1. [設計判断の質問]
 ユーザーは「はい（推奨通り）」「いいえ（〇〇にしたい）」等と答える。
 回答を受け取ったら次の質問へ進む。全質問を消化するか、設計方針が十分に明確になったら次へ進む。
 
-**「確認の必要なし」と返ってきた場合**、または全質問を消化したら即座にStep 3へ。
+**「確認の必要なし」と返ってきた場合**、または全質問を消化したら即座にStep 5へ。
 
-得られた全ての回答を「確定した設計方針（DESIGN_DIRECTION）」として記録し、Step 3以降のADR策定に活用する。
+得られた全ての回答を「確定した設計方針（DESIGN_DIRECTION）」として記録し、Step 5以降のADR策定に活用する。
 
-### Step 3: 調査結果の統合と実現性評価
+### Step 5: 調査結果の統合と実現性評価
 
 全エージェントの結果を統合し、実現性を3段階で評価：
 
@@ -134,10 +134,10 @@ Q1. [設計判断の質問]
   > 代替案B: [概要・採用すべき理由]
   >
   > どちらで進めますか？"
-- 選択された代替案を `DESIGN_DIRECTION` に記録して Step 4 以降の ADR 策定に反映する
+- 選択された代替案を `DESIGN_DIRECTION` に記録して Step 7 の ADR 策定に反映する
 - ⚠️ Spec の Goal/Why/Constraints は変更しない。HOW（アプローチ）のみを代替案に切り替える
 
-### Step 4: スコープ定義とPhase分け
+### Step 6: スコープ定義とPhase分け
 
 SpecのGoalと調査結果を照合し、今回実装するスコープ（Phase 1）と後続フェーズ（Phase 2+）に分類する。
 
@@ -165,13 +165,13 @@ EOF
 )"
 ```
 
-作成したIssue番号とURLを記録し、Step 5のコメントに含める。延期項目がない場合はこのステップをスキップする。
+作成したIssue番号とURLを記録し、Step 7のコメントに含める。延期項目がない場合はこのステップをスキップする。
 
-### Step 5: Design作成・品質チェック・投稿
+### Step 7: Design作成・品質チェック・投稿
 
-#### Step 5-a: 設計内容の作成（下書き）
+#### Step 7-a: 設計内容の作成（下書き）
 
-Step 2.5 の DESIGN_DIRECTION と Step 3 の実現性評価をもとに、以下のテンプレートで設計内容を作成する（まだ投稿しない）：
+Step 4 の DESIGN_DIRECTION と Step 5 の実現性評価をもとに、以下のテンプレートで設計内容を作成する（まだ投稿しない）：
 
 ```
 <!-- arc:design -->
@@ -238,19 +238,19 @@ Step 2.5 の DESIGN_DIRECTION と Step 3 の実現性評価をもとに、以下
 **Out of Scope（Phase 2以降）**: なし / #NNN [タイトル]（Issue URL）
 ```
 
-#### Step 5-b: design-reviewerによる品質チェック
+#### Step 7-b: design-reviewerによる品質チェック
 
 `../../agents/design-reviewer.md` を Read し、以下のプレースホルダーを置換してExploreエージェントを起動する：
 - `[specの内容]` → SPEC_CONTENTの内容
-- `[designの内容]` → Step 5-aで作成したDesignの全文
+- `[designの内容]` → Step 7-aで作成したDesignの全文
 
 design-reviewerの結果を受け取ったら：
-- **問題なし**: 即座に Step 5-c へ進む
-- **MEDIUM指摘**: 改善推奨として記録し、Designを修正して Step 5-c へ進む
-- **HIGH指摘**: Designを自動修正して Step 5-b を再実行する（最大2回）
+- **問題なし**: 即座に Step 7-c へ進む
+- **MEDIUM指摘**: 改善推奨として記録し、Designを修正して Step 7-c へ進む
+- **HIGH指摘**: Designを自動修正して Step 7-b を再実行する（最大2回）
 - **CRITICAL指摘**: `AskUserQuestion` でユーザーに確認を求める（GoalがDesignでカバーされていない等の根本的な欠落）
 
-#### Step 5-c: Issueコメントへの投稿
+#### Step 7-c: Issueコメントへの投稿
 
 品質チェック通過後、既存の `<!-- arc:design -->` コメントがある場合は更新し、なければ新規投稿する：
 
@@ -262,14 +262,14 @@ design-reviewerの結果を受け取ったら：
    ```
 2. IDが取得できた場合（既存コメントあり）は更新する（`<COMMENT_ID>` は前のコマンドの出力値）：
    ```bash
-   gh api repos/<REPO>/issues/comments/<COMMENT_ID> -X PATCH -f body="<Step 5-aで作成した設計内容の全文>"
+   gh api repos/<REPO>/issues/comments/<COMMENT_ID> -X PATCH -f body="<Step 7-aで作成した設計内容の全文>"
    ```
    IDが空だった場合（既存コメントなし）は新規投稿する：
    ```bash
-   gh issue comment <ISSUE_NUM> --body "<Step 5-aで作成した設計内容の全文>"
+   gh issue comment <ISSUE_NUM> --body "<Step 7-aで作成した設計内容の全文>"
    ```
 
-### Step 6: Docsの更新
+### Step 8: Docsの更新
 
 調査で発覚した制約・前提条件を `docs/` ファイルの仕様セクションに反映する（変更がある場合のみ）。
 
@@ -280,7 +280,7 @@ git add docs/
 git commit -m "spec: update docs with design constraints for issue #NNN"
 ```
 
-### Step 7: 案内
+### Step 9: 案内
 
 IssueのURLを表示し、**"設計結果を確認し方向性を決定したら、`/arc-planning` を実行してください"** と案内する。
 
