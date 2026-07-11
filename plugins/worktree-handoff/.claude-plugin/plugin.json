@@ -1,0 +1,10 @@
+{
+  "name": "worktree-handoff",
+  "description": "Hands off a finished requirements/planning conversation to an isolated git worktree session for implementation",
+  "version": "0.1.0",
+  "author": {
+    "name": "Takanori Koga"
+  },
+  "homepage": "https://github.com/kogatakanori/skills/tree/main/plugins/worktree-handoff",
+  "license": "MIT"
+}

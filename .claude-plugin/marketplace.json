@@ -43,6 +43,12 @@
       "description": "Personal context loader — load career, skills, thinking, and profile on demand from your private context repo",
       "source": "./plugins/context",
       "strict": false
+    },
+    {
+      "name": "worktree-handoff",
+      "description": "Hands off a finished requirements/planning conversation to an isolated git worktree session for implementation",
+      "source": "./plugins/worktree-handoff",
+      "strict": false
     }
   ]
 }
