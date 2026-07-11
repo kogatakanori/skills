@@ -32,6 +32,37 @@ format_duration() {
   fi
 }
 
+# rate_limits.*.resets_at（Unix epoch seconds）から現在時刻までの残り時間を d/h/m 表示に変換する関数
+format_resets_in() {
+  local resets_at=$1
+  local now=$2
+  local diff=$(( resets_at - now ))
+  if [ "$diff" -le 0 ]; then
+    echo "now"
+    return
+  fi
+  local d=$(( diff / 86400 ))
+  local h=$(( (diff % 86400) / 3600 ))
+  local m=$(( (diff % 3600) / 60 ))
+  if [ "$d" -gt 0 ]; then
+    printf "%dd%02dh" "$d" "$h"
+  elif [ "$h" -gt 0 ]; then
+    printf "%dh%02dm" "$h" "$m"
+  else
+    printf "%dm" "$m"
+  fi
+}
+
+# 使用率（整数）に応じた色エスケープシーケンスを返す関数（コンテキスト使用率と同じ閾値）
+rate_limit_color() {
+  local pct_int=$1
+  if   [ "$pct_int" -ge 85 ]; then echo "\033[31m"       # 赤
+  elif [ "$pct_int" -ge 70 ]; then echo "\033[38;5;208m" # オレンジ
+  elif [ "$pct_int" -ge 50 ]; then echo "\033[33m"       # 黄
+  else echo ""
+  fi
+}
+
 # モデル
 MODEL=$(echo "$input" | jq -r '.model.display_name')
 
@@ -73,8 +104,42 @@ elif [ "$PCT_INT" -ge 50 ]; then COLOR="\033[33m"       RESET="\033[0m"  # 黄
 else                              COLOR=""              RESET=""          # 色なし
 fi
 
-# ステータスライン出力
-echo -e "$MODEL | 📊 ${COLOR}${USED_TOKENS}/${CTX_SIZE} ${PCT}%${RESET} | ↑${TOTAL_INPUT_TOKEN} ↓${TOTAL_OUTPUT_TOKEN} | 💰 ${COST} | ⏱️ ${DURATION}"
+# プランのレート制限（Claude.ai Pro/Max 契約時、セッション最初の API 応答後のみ存在）
+NOW=$(date +%s)
+RL_RESET="\033[0m"
+FIVE_H_PCT=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+FIVE_H_RESETS=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
+WEEK_PCT=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
+WEEK_RESETS=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
+
+RATE_LIMIT_TEXT=""
+if [ -n "$FIVE_H_PCT" ]; then
+  FIVE_H_INT=$(printf '%.0f' "$FIVE_H_PCT")
+  FIVE_H_COLOR=$(rate_limit_color "$FIVE_H_INT")
+  if [ -n "$FIVE_H_RESETS" ]; then
+    FIVE_H_STR="${FIVE_H_COLOR}$(format_resets_in "$FIVE_H_RESETS" "$NOW")/5h ${FIVE_H_INT}%${RL_RESET}"
+  else
+    FIVE_H_STR="${FIVE_H_COLOR}5h ${FIVE_H_INT}%${RL_RESET}"
+  fi
+  RATE_LIMIT_TEXT="$FIVE_H_STR"
+fi
+if [ -n "$WEEK_PCT" ]; then
+  WEEK_INT=$(printf '%.0f' "$WEEK_PCT")
+  WEEK_COLOR=$(rate_limit_color "$WEEK_INT")
+  if [ -n "$WEEK_RESETS" ]; then
+    WEEK_STR="${WEEK_COLOR}$(format_resets_in "$WEEK_RESETS" "$NOW")/7d ${WEEK_INT}%${RL_RESET}"
+  else
+    WEEK_STR="${WEEK_COLOR}7d ${WEEK_INT}%${RL_RESET}"
+  fi
+  RATE_LIMIT_TEXT="${RATE_LIMIT_TEXT:+${RATE_LIMIT_TEXT}・}$WEEK_STR"
+fi
+
+# ステータスライン出力（1行目: モデル・コンテキスト・up/down・リミット・金額・時間／2行目: フォルダ・ブランチ）
+LINE1="$MODEL | 📊 ${COLOR}${USED_TOKENS}/${CTX_SIZE} ${PCT}%${RESET} | ↑${TOTAL_INPUT_TOKEN} ↓${TOTAL_OUTPUT_TOKEN}"
+[ -n "$RATE_LIMIT_TEXT" ] && LINE1="${LINE1} | ⏳ ${RATE_LIMIT_TEXT}"
+LINE1="${LINE1} | 💰 ${COST} | ⏱️ ${DURATION}"
+echo -e "$LINE1"
+
 if [ -n "$BRANCH" ]; then
   echo -e "📁 ${DIR##*/}/ on $BRANCH"
 else

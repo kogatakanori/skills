@@ -13,7 +13,7 @@ user_invocable: true
 | ファイル | 内容 |
 |---------|------|
 | `.claude/settings.json` | セキュリティdeny設定・PostToolUseフック・ステータスライン・context7プラグイン設定 |
-| `.claude/statusline.sh` | セッション情報（モデル・コンテキスト・コスト・ブランチ）を表示するスクリプト |
+| `.claude/statusline.sh` | セッション情報（モデル・コンテキスト・コスト・ブランチ・プランのレート制限）を表示するスクリプト |
 | `.claude/hooks/stop-consistency-check.sh` | Stop hook — 作業完了時に実装とドキュメントの整合性を確認するスクリプト |
 | `README.md` | プロジェクト名・目次・docs/へのリンク |
 | `AGENT.md` | `@docs/context/` への参照と共通コマンド |
@@ -103,7 +103,7 @@ git管理されるプロジェクトの「記憶」置き場。ユーザーが�
 chmod +x .claude/statusline.sh
 ```
 
-セッションのモデル・コンテキスト使用率・コスト・経過時間・ブランチ名を表示するステータスラインスクリプト。
+セッションのモデル・コンテキスト使用率・コスト・経過時間・ブランチ名に加え、プランのレート制限（`rate_limits`。Claude.ai Pro/Max契約時のみ、5時間/7日ウィンドウの使用率と残りリセット時間）を表示するステータスラインスクリプト。`rate_limits`が存在しない場合（Freeプランやセッション開始直後）はその行を表示しない。
 
 #### .claude/hooks/stop-consistency-check.sh
 
