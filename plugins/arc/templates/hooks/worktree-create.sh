@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # WorktreeCreate hook: worktreeを作成して初期セットアップを行う
+set -euo pipefail
+trap 'echo "[worktree-create] unexpected error (line $LINENO)" >&2; exit 2' ERR
+
 INPUT=$(cat)
 NAME=$(echo "$INPUT"      | jq -r '.worktree_name')
 CWD=$(echo "$INPUT"       | jq -r '.cwd')

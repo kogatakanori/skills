@@ -3,6 +3,7 @@
 # 変更パターンに応じてClaudeに軽量チェックを促す（問題なければ1行で完結）
 
 set -euo pipefail
+trap 'echo "[stop-consistency-check] unexpected error (line $LINENO)" >&2; exit 2' ERR
 
 # 変更ファイルをドキュメント／コードに分類
 CHANGED_DOCS=$(git status --porcelain 2>/dev/null | awk '{print $2}' | grep -E '\.(md|txt|rst|adoc)$' || true)
