@@ -23,8 +23,8 @@
 | **design-clarifier** | Sonnet | Phase 1（Specのみ・Step 2）: 踏襲型/変革型を判断し調査戦略を決定。Phase 2（調査結果後・Step 4）: アーキテクチャ・データモデル・統合方式・テスト戦略のHOW判断をQ&Aで確認する | Explore |
 | **design-reviewer** | Sonnet | 作成済みDesignをSpecと照合し、Spec要件カバレッジ・トレーサビリティ完全性・Constraintガードレール・テスト戦略を検証する | Explore |
 | **codebase-analyst** | Sonnet | 踏襲型: 類似機能・パターン・再利用可能コンポーネントを調査。変革型: 変更対象実装・影響範囲を特定 | Explore |
-| **architecture-analyst** | Sonnet | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore |
-| **dependency-analyst** | Sonnet | ライブラリ・外部APIの存在とバージョン適合性・破壊的変更リスクを確認 | Explore |
+| **architecture-analyst** | Sonnet | アーキテクチャ制約・既存docs・テスト基盤を調査（設計判断の前提として利用） | Explore（変革型は常時／踏襲型は条件付き） |
+| **dependency-analyst** | Sonnet | ライブラリ・外部APIの存在とバージョン適合性・破壊的変更リスクを確認 | Explore（変革型は常時／踏襲型は条件付き） |
 | **performance-analyst** | Sonnet | クエリパターン・キャッシュ設計・同時実行・スケーラビリティのパフォーマンス設計制約を調査 | Explore（条件付き） |
 | **security-analyst** | Sonnet | 認証・認可モデル・データ機密性・脅威ベクターのセキュリティ設計制約を特定 | Explore（条件付き） |
 | **web-research-analyst** | Sonnet | ライブラリのメンテ状況・セキュリティ・breaking changesをWeb検索で確認 | Explore（条件付き） |
@@ -47,8 +47,8 @@
 | design-clarifier | | ✅ 常時 | | |
 | design-reviewer | | ✅ 常時 | | |
 | codebase-analyst | | ✅ 常時 | | |
-| architecture-analyst | | ✅ 常時 | | |
-| dependency-analyst | | ✅ 常時 | | |
+| architecture-analyst | | 🔷 変革型常時/踏襲型条件付き | | |
+| dependency-analyst | | 🔷 変革型常時/踏襲型条件付き | | |
 | performance-analyst | | 🔶 条件付き | | |
 | security-analyst | | 🔶 条件付き | | |
 | web-research-analyst | | 🔶 条件付き | | |
@@ -60,7 +60,7 @@
 | cicd-reviewer | | | | 🔶 条件付き |
 | spec-coverage-reviewer | | | | ✅ 最終のみ |
 
-> ✅ 常時起動 / 🔶 変更内容によって条件起動 / ✅ 最終のみ = 全タスク完了後の Step 4 でのみ起動
+> ✅ 常時起動 / 🔶 変更内容によって条件起動 / 🔷 変革型は常時・踏襲型はキーワード条件付き / ✅ 最終のみ = 全タスク完了後の Step 4 でのみ起動
 
 ---
 
@@ -277,8 +277,8 @@ flowchart TD
         direction TB
         dc["design-clarifier\nStep 2 常時: Phase 1 踏襲型/変革型の判断\nStep 4 調査完了後: Phase 2 HOW判断Q&A"]
         cb["codebase-analyst 【Phase 2a 常時 並列①】\n踏襲型: 参考パターン・再利用コンポーネント調査\n変革型: 変更対象の既存実装・影響範囲を特定"]
-        aa["architecture-analyst 【Phase 2a 常時 並列②】\nアーキテクチャ制約・既存docs・テスト基盤調査"]
-        dep["dependency-analyst 【Phase 2a 常時 並列③】\nライブラリ・API存在確認・バージョン適合性\n破壊的変更リスク"]
+        aa["architecture-analyst 【Phase 2a 変革型常時/踏襲型条件付き 並列②】\nアーキテクチャ制約・既存docs・テスト基盤調査"]
+        dep["dependency-analyst 【Phase 2a 変革型常時/踏襲型条件付き 並列③】\nライブラリ・API存在確認・バージョン適合性\n破壊的変更リスク"]
         perf["performance-analyst 【Phase 2a 🔶条件付き 並列④】\nパフォーマンス|スケール|レイテンシ|キャッシュ|同時|大量\nをspecに含む場合のみ起動"]
         secan["security-analyst 【Phase 2a 🔶条件付き 並列⑤】\n認証|認可|ログイン|パスワード|API|ユーザー|権限|トークン\nをspecに含む場合のみ起動"]
         web["web-research-analyst 【Phase 2c 🔶条件付き】\n不明ライブラリ・外部API・セキュリティ情報をWeb確認"]
