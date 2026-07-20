@@ -94,7 +94,8 @@ Issueのspecコメントを読み取り技術的実現性を調査し、調査�
 
 - IssueコメントからspecをAPIで取得
 - **design-clarifier**（Phase 1）で踏襲型/変革型を判断して調査戦略を決定
-- **codebase-analyst**・**architecture-analyst**・**dependency-analyst** を常時起動、**performance-analyst**・**security-analyst** をSpecのキーワードに応じて条件付き起動（最大5並列）
+- **codebase-analyst** を常時起動。**architecture-analyst**・**dependency-analyst** は変革型なら常時起動、踏襲型ならSpecのキーワードに応じて条件付き起動。**performance-analyst**・**security-analyst** はSpecのキーワードに応じて条件付き起動（最大5並列）
+- 踏襲型かつキーワード非該当の場合はcodebase-analystのみが起動する軽量パスとなり、調査コストを抑えられる
 - **design-clarifier**（Phase 2）でHOW判断Q&Aを実施
 - 実現性を3段階で判定：
   - `実現可能` — 制約なし、そのまま進める
@@ -168,8 +169,8 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 | design-clarifier | Phase 1: 踏襲型/変革型判断。Phase 2: HOW判断Q&A | arc-designing |
 | design-reviewer | Spec要件カバレッジ・トレーサビリティ・Constraintガードレールをレビュー | arc-designing |
 | codebase-analyst | 踏襲型: パターン・再利用コンポーネント調査。変革型: 変更対象・影響範囲を特定 | arc-designing |
-| architecture-analyst | アーキテクチャ制約・テスト基盤を調査 | arc-designing |
-| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認 | arc-designing |
+| architecture-analyst | アーキテクチャ制約・テスト基盤を調査（変革型は常時／踏襲型は条件付き） | arc-designing |
+| dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認（変革型は常時／踏襲型は条件付き） | arc-designing |
 | performance-analyst | パフォーマンス設計制約（クエリ・キャッシュ・同時実行）を調査 | arc-designing |
 | security-analyst | セキュリティ設計制約（認証・認可・データ機密性）を特定 | arc-designing |
 | implementation-analyst | 実装対象コードの詳細調査 | arc-planning |
