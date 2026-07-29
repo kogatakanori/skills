@@ -4,7 +4,9 @@ GitHub IssueからPRまでをAIが自律的に推進するSDLCワークフロー
 
 ## 概要
 
-Arcは5つのスキルで構成され（コアスキル4つ＋メンテナンス1つ）、仕様策定・技術調査・タスク計画・TDD実装を一貫して自動化します。ユーザーが関与するのは「specの承認」「調査結果の方向性確認」「カバレッジ確認（CRITICAL/HIGH指摘時のみ）」「PR pushの承認」の4点のみです。
+Arcは7つのスキルで構成され（コアスキル4つ＋bug fix/調査系2つ＋メンテナンス1つ）、仕様策定・技術調査・タスク計画・TDD実装を一貫して自動化します。ユーザーが関与するのは「specの承認」「調査結果の方向性確認」「カバレッジ確認（CRITICAL/HIGH指摘時のみ）」「PR pushの承認」の4点のみです（bug fix/調査系トラックも同様に最小限の人間ゲートで進みます）。
+
+新機能開発は `/arc-specifying` から始まるspec/design/plan/implementの4フェーズフローを使います。バグ修正やコード理解・設計調査のようにGoal/Use Cases/Acceptance Criteriaを固める必要がないタスクには、spec/designを持たない軽量な `/arc-investigating` → `/arc-bugfixing` トラックを使います（詳細は後述）。
 
 spec・plan・taskはGitHub Issueのコメントとして管理します。実装した機能のドキュメントのみ `docs/` ファイルとして保存します。PRに `Closes #NNN` を記載するため、マージ時にIssueは自動でクローズされます。
 
@@ -65,6 +67,36 @@ GitHub Issue
 /arc-cleaning
   └─ マージ済みworktreeを検出して削除
 ```
+
+## bug fix / 調査系トラック（spec/designを持たない軽量フロー）
+
+```
+GitHub Issue（省略可）
+      │
+      ▼
+/arc-investigating [<N>]
+  Exploreエージェントで即調査（コードは変更しない）
+      │
+      │ 調査結果 ──→ <!-- arc:investigation --> としてIssueコメント（Issue番号ありの場合のみ）
+      │
+      │ ← 調査結果を確認。修正が必要か判断
+      ▼
+/arc-bugfixing <N>
+  └─ implementation-analyst   詳細調査（<!-- arc:investigation --> またはIssue本文が入力）
+      │
+      │ tasksコメント（Goal→タスク対応表なし。カバレッジチェックもなし）──→ Issue
+      │
+      │（自動移行・人間の介入なし）
+      ▼
+/arc-implementing（既存を無改造で流用）
+   ... 以降は通常フローと同じ
+```
+
+**既存4フェーズフローとの違い**:
+- spec・designは作らない（Goal/Use Cases/Acceptance Criteria/ADRを固める必要がないため）
+- `<!-- arc:investigation -->` コメントが無くても、自明なバグなら `/arc-bugfixing` から直接開始できる
+- `/arc-investigating` はIssue番号なしでも使えるアドホックな調査ツール（コード変更やPRを一切伴わない）
+- `arc-implementing` は無改造で流用するため、spec-coverage-reviewerの起動やPR本文のSummary抽出は空振りになるが許容している
 
 ## データの置き場所
 
@@ -129,6 +161,29 @@ specをTDDタスクリストに分解し、品質確認後にIssueコメント�
 - マージ済みのworktreeを確認後に `git worktree remove` と `git branch -d` で削除
 - 未マージのworktreeはそのまま保持
 
+### `/arc-investigating [<N>]`
+
+コードベース・設計に関する質問に即座に調査して回答する。**コードは変更しない。**
+
+- Issue番号は任意。指定なしならアドホックな対話として完結し、指定ありなら調査結果を `<!-- arc:investigation -->` 識別子付きでIssueコメントに投稿する
+- 明確化のためのQ&Aは挟まず、質問をそのまま `Explore` エージェントに渡して調査する（専用の投資対象エージェントファイルは作らない）
+- bugの調査の場合は再現条件・影響範囲・修正方針の候補も報告する
+- 修正が必要と分かった場合は `/arc-bugfixing <N>` へ引き継ぐよう案内する
+
+### `/arc-bugfixing <N>`
+
+bug修正をTDDタスクリストに分解し、自動で実装フェーズへ移行する。`arc-planning`のbug fix版で、**spec・designは作らない。**
+
+- `<!-- arc:investigation -->` コメント（なければIssue本文）を入力に **implementation-analyst** で実装対象コードを詳細調査
+- `[test]` → `[impl]` のペアでタスクを分解（Goal→タスク対応表は使わない）
+- 以下の観点で自律レビューFBループ（最大3回）：
+  1. TDD対応（全`[impl]`に対応する`[test]`があるか）
+  2. 粒度の適切さ（1〜2時間程度のサイズか）
+  3. 依存関係の順序
+  - **Goal/ACカバレッジチェックは行わない**（specが存在しないため）
+- タスクリストを `<!-- arc:tasks -->` 識別子付きでIssueコメントとして投稿
+- **人間の介入なしに `Agent` ツールで sub-agent を spawn し、`arc-implementing` を新しいコンテキストで実行**（既存を無改造で流用するため、spec-coverage-reviewerの起動などは空振りになるが許容する）
+
 ### `/arc-implementing`
 
 TDDで全タスクを自律実装し、最終横断レビュー後にPRを作成する。
@@ -173,13 +228,15 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 | dependency-analyst | ライブラリ・外部APIの存在・バージョン適合性・破壊的変更リスクを確認（変革型は常時／踏襲型は条件付き） | arc-designing |
 | performance-analyst | パフォーマンス設計制約（クエリ・キャッシュ・同時実行）を調査 | arc-designing |
 | security-analyst | セキュリティ設計制約（認証・認可・データ機密性）を特定 | arc-designing |
-| implementation-analyst | 実装対象コードの詳細調査 | arc-planning |
+| implementation-analyst | 実装対象コードの詳細調査 | arc-planning, arc-bugfixing |
 | quality-reviewer | コード品質レビュー（命名・責務・重複・複雑度） | arc-implementing |
 | architecture-linter | TDD遵守・レイヤー境界・ADRルールの静的チェック | arc-implementing |
 | spec-coverage-reviewer | Goal/AC/Constraintsのテストカバレッジ検証 | arc-implementing |
 | security-reviewer | セキュリティレビュー（条件付き） | arc-implementing |
 | architecture-reviewer | アーキテクチャレビュー（条件付き） | arc-implementing |
 | cicd-reviewer | CI/CDレビュー（条件付き） | arc-implementing |
+
+`arc-investigating` は上記の専用エージェントファイルを持たず、`Explore` エージェントを直接起動する（軽量さ優先のため）。
 
 ## セットアップ（推奨）
 
@@ -328,3 +385,19 @@ arcはテンプレートファイル（`templates/`）やエージェント定�
 # → git push / PR作成の確認のみ
 # PRマージ時にIssueは自動クローズ（Closes #NNN）
 ```
+
+### bug fix / 調査系タスク（spec/designなしの軽量トラック）
+
+```bash
+# 1. 調査（Issue番号は任意。コードは変更しない）
+/arc-investigating 42
+
+# → 調査結果（<!-- arc:investigation -->）を確認
+
+# 2. bug修正をTDDタスクに分解 → 自動的に実装・PR作成まで実行
+/arc-bugfixing 42
+
+# → git push / PR作成の確認のみ
+```
+
+自明なバグは調査結果コメントがなくても `/arc-bugfixing <N>` から直接開始できる（Issue本文から詳細調査する）。
