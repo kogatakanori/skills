@@ -11,6 +11,8 @@
 | **arc-planning** | `/arc-planning` | SpecとDesignをTDDタスクに分解し、自律FBループで品質確認後に投稿する | arc-implementing へ自動移行 |
 | **arc-implementing** | `/arc-implementing` | TDD（Red-Green）でタスクを自律実装し、専門レビューエージェントのFBループ後にPRを作成する | なし（PR作成前に人間ゲート） |
 | **arc-cleaning** | `/arc-cleaning` | マージ済みworktreeを検出・削除し、ローカルを整理する | — |
+| **arc-investigating** | `/arc-investigating [<N>]` | コードベース・設計に関する質問を即座に調査して回答する（コードは変更しない）。spec/designは作らない | なし（人間が調査結果を見て判断） |
+| **arc-bugfixing** | `/arc-bugfixing <N>` | bug修正をTDDタスクに分解する。arc-planningのbug fix版でspec/designは作らない | arc-implementing へ自動移行 |
 
 ---
 
@@ -36,31 +38,36 @@
 | **cicd-reviewer** | Sonnet | ビルド失敗・マイグレーション漏れ・デプロイ順序問題をレビュー | Explore（条件付き） |
 | **spec-coverage-reviewer** | Sonnet | Goal/Acceptance Criteria/Constraintsに対応するテストカバレッジを検証 | Explore |
 
+> `arc-investigating` は専用エージェントファイルを持たない。`Explore` エージェントに調査内容をそのまま渡して起動する（軽量さ優先）。`arc-bugfixing` は implementation-analyst を再利用する（Specの代わりにinvestigationコメント／Issue本文を入力する）。
+
 ---
 
 ## スキルとエージェントの対応表
 
-| エージェント＼スキル | arc-specifying | arc-designing | arc-planning | arc-implementing |
-|-------------|:--------------:|:-------------:|:------------:|:----------------:|
-| spec-clarifier | ✅ 常時 | | | |
-| spec-reviewer | ✅ 常時 | | | |
-| design-clarifier | | ✅ 常時 | | |
-| design-reviewer | | ✅ 常時 | | |
-| codebase-analyst | | ✅ 常時 | | |
-| architecture-analyst | | 🔷 変革型常時/踏襲型条件付き | | |
-| dependency-analyst | | 🔷 変革型常時/踏襲型条件付き | | |
-| performance-analyst | | 🔶 条件付き | | |
-| security-analyst | | 🔶 条件付き | | |
-| web-research-analyst | | 🔶 条件付き | | |
-| implementation-analyst | | | ✅ 常時 | |
-| quality-reviewer | | | | ✅ 常時 |
-| architecture-linter | | | | ✅ 常時 |
-| security-reviewer | | | | 🔶 条件付き |
-| architecture-reviewer | | | | 🔶 条件付き |
-| cicd-reviewer | | | | 🔶 条件付き |
-| spec-coverage-reviewer | | | | ✅ 最終のみ |
+| エージェント＼スキル | arc-specifying | arc-designing | arc-planning | arc-implementing | arc-investigating | arc-bugfixing |
+|-------------|:--------------:|:-------------:|:------------:|:----------------:|:------------------:|:-------------:|
+| spec-clarifier | ✅ 常時 | | | | | |
+| spec-reviewer | ✅ 常時 | | | | | |
+| design-clarifier | | ✅ 常時 | | | | |
+| design-reviewer | | ✅ 常時 | | | | |
+| codebase-analyst | | ✅ 常時 | | | | |
+| architecture-analyst | | 🔷 変革型常時/踏襲型条件付き | | | | |
+| dependency-analyst | | 🔷 変革型常時/踏襲型条件付き | | | | |
+| performance-analyst | | 🔶 条件付き | | | | |
+| security-analyst | | 🔶 条件付き | | | | |
+| web-research-analyst | | 🔶 条件付き | | | | |
+| implementation-analyst | | | ✅ 常時 | | | ✅ 常時 |
+| quality-reviewer | | | | ✅ 常時 | | |
+| architecture-linter | | | | ✅ 常時 | | |
+| security-reviewer | | | | 🔶 条件付き | | |
+| architecture-reviewer | | | | 🔶 条件付き | | |
+| cicd-reviewer | | | | 🔶 条件付き | | |
+| spec-coverage-reviewer | | | | ✅ 最終のみ | | |
+| Explore（汎用） | | | | | ✅ 常時 | |
 
 > ✅ 常時起動 / 🔶 変更内容によって条件起動 / 🔷 変革型は常時・踏襲型はキーワード条件付き / ✅ 最終のみ = 全タスク完了後の Step 4 でのみ起動
+>
+> この表は各スキルが**直接**起動するエージェントを示す。`arc-bugfixing` は自動移行先の `arc-implementing` 経由で `quality-reviewer`・`architecture-linter`・`spec-coverage-reviewer` 等（arc-implementing列）も間接的に起動する。spec/designコメントが存在しないため、`spec-coverage-reviewer` はSpec内容なしで動作することになる点に注意（詳細は本文参照）。
 
 ---
 
@@ -400,3 +407,65 @@ flowchart TD
 
     SPEC_FB --> DESIGN_FB --> PLAN_FB --> IMPL_FB --> FINAL_FB
 ```
+
+---
+
+## 4. bug fix / 調査系トラック
+
+spec/designを持たない軽量フロー。新機能開発の4フェーズフロー（specifying→designing→planning→implementing）とは独立しており、`arc-implementing` のみを共有する。
+
+```mermaid
+flowchart TD
+    Issue2[["🎫 GitHub Issue（省略可）"]]
+
+    subgraph INV["🔍 /arc-investigating [<N>]"]
+        direction TB
+        inv1["Step 1\n質問の確定（Q&Aなし・即調査）"]
+        inv2["Step 2\nExploreエージェントで調査\n（コード変更なし）"]
+        inv3["Step 3\n結果を提示\nIssue番号ありなら投稿"]
+        inv1 --> inv2 --> inv3
+    end
+
+    GH_inv[("<!-- arc:investigation -->\n結論 / 根拠 / 確信度\n（bugなら再現条件・影響範囲も）")]
+    HG_inv{{"👤 調査結果を確認し\n修正要否を判断"}}
+
+    subgraph BF["🐛 /arc-bugfixing <N>"]
+        direction TB
+        bf1["Step 1\nIssueブランチ作成"]
+        bf2["Step 3\ninvestigationコメント取得\n（なければIssue本文で代替）"]
+        bf3["Step 4\nimplementation-analyst\n詳細調査"]
+        bf4["Step 5\nTDDタスク分解\n（Goal→タスク対応表なし）"]
+        bf5["Step 6\n自律レビューFB\nTDD対応/粒度/依存順序のみ"]
+        bf6["Step 8\ntasksコメント投稿"]
+        bf1 --> bf2 --> bf3 --> bf4 --> bf5 --> bf6
+    end
+
+    GH_tasks2[("<!-- arc:tasks -->\n[test]/[impl]タスクリスト")]
+
+    IMPL2["⚙️ /arc-implementing\n（既存を無改造で流用）"]
+    HG_cov2{{"👤 カバレッジ確認"}}
+    HG_pr2{{"👤 PR作成承認"}}
+    PR2[["🔀 Pull Request"]]
+
+    Issue2 --> INV
+    inv3 -->|"Issue番号あり"| GH_inv
+    INV --> HG_inv
+    HG_inv -->|"修正が必要"| BF
+    GH_inv -->|"取得（なければIssue本文）"| bf2
+    Issue2 -.->|"自明なバグは調査を省略して直接開始"| BF
+    bf6 -->|投稿| GH_tasks2
+    BF -->|"🤖 自動移行"| IMPL2
+    IMPL2 --> HG_cov2 --> HG_pr2 --> PR2
+
+    style HG_inv fill:#ff9900,color:#000
+    style HG_cov2 fill:#ff9900,color:#000
+    style HG_pr2 fill:#ff9900,color:#000
+    style GH_inv fill:#0075ca,color:#fff
+    style GH_tasks2 fill:#0075ca,color:#fff
+```
+
+**既存4フェーズフローとの違い**:
+- spec・designのステップが存在しない（Goal/Use Cases/Acceptance Criteria/ADRを固める必要がないため）
+- `arc-investigating` はIssue番号なしでも使えるアドホックな調査ツール。コード変更・PR作成を一切伴わない
+- `arc-bugfixing` のタスクレビューFBはGoal/ACカバレッジチェックを行わない（specが存在しないため）
+- `arc-implementing` は無改造で流用する。spec/designコメントが無い分、Step 4のspec-coverage-reviewerの起動やPR本文のSummary抽出は空振りになるが許容している
