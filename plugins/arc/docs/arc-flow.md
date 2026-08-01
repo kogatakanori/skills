@@ -66,6 +66,8 @@
 | Explore（汎用） | | | | | ✅ 常時 | |
 
 > ✅ 常時起動 / 🔶 変更内容によって条件起動 / 🔷 変革型は常時・踏襲型はキーワード条件付き / ✅ 最終のみ = 全タスク完了後の Step 4 でのみ起動
+>
+> この表は各スキルが**直接**起動するエージェントを示す。`arc-bugfixing` は自動移行先の `arc-implementing` 経由で `quality-reviewer`・`architecture-linter`・`spec-coverage-reviewer` 等（arc-implementing列）も間接的に起動する。spec/designコメントが存在しないため、`spec-coverage-reviewer` はSpec内容なしで動作することになる点に注意（詳細は本文参照）。
 
 ---
 

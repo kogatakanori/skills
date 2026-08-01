@@ -77,16 +77,28 @@ gh issue comment <N> --body "$(cat <<'EOF'
 
 ### 不明点
 [あれば記載。なければ「なし」]
-
-### bug調査の場合
-**再現条件**: [...]
-**影響範囲**: [...]
-**修正方針の候補**: [...]
 EOF
 )"
 ```
 
+**bugの調査の場合のみ**、上記の「不明点」セクションの後に以下を追記する（bugでない調査の場合はセクション自体を含めない）：
+
+```
+### bug調査の場合
+**再現条件**: [...]
+**影響範囲**: [...]
+**修正方針の候補**: [...]
+```
+
 Issue番号が指定されていない場合は会話内の回答のみで完結し、Issueへの投稿は行わない。
+
+**同じIssueに対して2回目以降の実行の場合**、新規投稿ではなく既存の `<!-- arc:investigation -->` コメントを上書き更新する：
+
+```bash
+gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | startswith("<!-- arc:investigation -->"))][0] | .id'
+```
+
+IDが取得できた場合は `gh api repos/<REPO>/issues/comments/<COMMENT_ID> -X PATCH -f body="..."` で更新する。IDが取得できなかった場合（初回実行）は上記の通り新規投稿する。
 
 ### Step 4: 案内
 
@@ -97,8 +109,3 @@ Issue番号が指定されていない場合は会話内の回答のみで完結
 
 - specやdesignのような品質レビュー専用エージェントは付けない（調査結果は人間が直接判断する）
 - 既存4スキル（specifying/designing/planning/implementing）とは独立しており、どちらから開始してもよい
-- 同じIssueに対して複数回実行した場合、`<!-- arc:investigation -->` コメントは新規投稿ではなく上書き更新する：
-  ```bash
-  gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | startswith("<!-- arc:investigation -->"))][0] | .id'
-  ```
-  IDが取得できた場合は `gh api repos/<REPO>/issues/comments/<COMMENT_ID> -X PATCH -f body="..."` で更新する
