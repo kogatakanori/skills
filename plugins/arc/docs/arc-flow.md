@@ -10,7 +10,6 @@
 | **arc-designing** | `/arc-designing` | HOWを設計する。実現性確認・スコープ定義・ADR策定を行う | なし（人間ゲートで停止） |
 | **arc-planning** | `/arc-planning` | SpecとDesignをTDDタスクに分解し、自律FBループで品質確認後に投稿する | arc-implementing へ自動移行 |
 | **arc-implementing** | `/arc-implementing` | TDD（Red-Green）でタスクを自律実装し、専門レビューエージェントのFBループ後にPRを作成する | なし（PR作成前に人間ゲート） |
-| **arc-cleaning** | `/arc-cleaning` | マージ済みworktreeを検出・削除し、ローカルを整理する | — |
 | **arc-investigating** | `/arc-investigating [<N>]` | コードベース・設計に関する質問を即座に調査して回答する（コードは変更しない）。spec/designは作らない | なし（人間が調査結果を見て判断） |
 | **arc-bugfixing** | `/arc-bugfixing <N>` | bug修正をTDDタスクに分解する。arc-planningのbug fix版でspec/designは作らない | arc-implementing へ自動移行 |
 
@@ -184,9 +183,8 @@ flowchart TD
         P4["Step 4\nTDDタスク分解"]
         P5["Step 5\nGoal→タスク\nトレーサビリティ"]
         P6["Step 6\n自律タスクレビューFBループ"]
-        P7["Step 7\nworktree判断"]
-        P8["Step 8\nタスクコメント投稿"]
-        P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+        P7["Step 7\nタスクコメント投稿"]
+        P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7
     end
 
     GH_tasks[("<!-- arc:tasks -->\n[test]/[impl]\nタスクリスト\nGoal→Task対応表")]
@@ -243,7 +241,7 @@ flowchart TD
     HG2 -->|"/arc-planning 実行"| PLAN
     GH_spec -->|取得| P2
     GH_design -->|取得| P2
-    P8 -->|投稿| GH_tasks
+    P7 -->|投稿| GH_tasks
     PLAN -->|"🤖 自動移行"| IMPL
     GH_tasks -->|取得| I1
     GH_spec -->|取得| I1
@@ -436,7 +434,7 @@ flowchart TD
         bf3["Step 4\nimplementation-analyst\n詳細調査"]
         bf4["Step 5\nTDDタスク分解\n（Goal→タスク対応表なし）"]
         bf5["Step 6\n自律レビューFB\nTDD対応/粒度/依存順序のみ"]
-        bf6["Step 8\ntasksコメント投稿"]
+        bf6["Step 7\ntasksコメント投稿"]
         bf1 --> bf2 --> bf3 --> bf4 --> bf5 --> bf6
     end
 

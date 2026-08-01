@@ -104,44 +104,30 @@ specのGoalおよびAcceptance Criteriaと、作成したタスクを紐付け�
 
 **重要**: Goal/ACに対応するタスクがないことはFBループの最優先修正対象とする。
 
-### Step 7: worktree使用有無の判断
+### Step 7: タスクリストをIssueコメントに投稿
 
-タスク数と内容から、実装フェーズでworktreeを使用するかを判断する。
-
-**worktree使用を推奨する条件**（いずれか該当）：
-- タスク総数が10件以上
-- 実装が複数日にわたることが見込まれる
-- 他のブランチでの開発と並行して進める必要がある
-
-上記に該当する場合は `WORKTREE_NEEDED=true`、該当しない場合は `WORKTREE_NEEDED=false` として記録する。
-
-### Step 8: タスクリストをIssueコメントに投稿
-
-品質基準を満たしたタスクリストをIssueコメントとして投稿する。`WORKTREE_NEEDED` の値をメタデータとして先頭行に含める：
+品質基準を満たしたタスクリストをIssueコメントとして投稿する：
 
 ```bash
 gh issue comment ${ISSUE_NUM} --body "$(cat <<'EOF'
 <!-- arc:tasks -->
-<!-- worktree: true -->
 ...タスクリストの内容...
 EOF
 )"
 ```
 
-（`WORKTREE_NEEDED=false` の場合は `<!-- worktree: false -->` にする）
-
 タスク一覧を出力して確認できるようにする。
 
-### Step 9: 実装フェーズへ自動移行
+### Step 8: 実装フェーズへ自動移行
 
 人間の介入なしに実装フェーズへ移行する：
 
 1. "タスク分解が完了しました。実装フェーズを開始します..." と表示する
 2. **`Agent` ツールで sub-agent を spawn し、以下の prompt を渡す：**
    ```
-   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。WORKTREE_NEEDED=<true/false>。ISSUE_NUM・REPO・WORKTREE_NEEDED はこの prompt の値を使用すること。
+   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。ISSUE_NUM・REPO はこの prompt の値を使用すること。
    ```
-   `<N>`・`<owner/repo>`・`<true/false>` は Step 1 および Step 7 で確定済みの値に置換する。
+   `<N>`・`<owner/repo>` は Step 1 で確定済みの値に置換する。
 
 ## Notes
 
