@@ -22,6 +22,7 @@ Specの全要件にDesign上の対応が記述されているか確認する：
 | Use Case | 各Use CaseのフローがADRまたはコンポーネント設計に含まれているか |
 | Constraint | 各ConstraintにDesign上の担保（ガードレール・設計制約）があるか |
 | Domain Model | DesignのデータモデルがSpecのDomain Modelと矛盾していないか |
+| Domain Modelの実データ整合性 | Domain Modelが依存する値（列挙値・外部キー・参照先データ等）が実際のコードベース・DB上のデータと一致しているか（コードを読んで裏取りする） |
 
 **スコープ外の扱い**: Out of ScopeになったSpec要件は「Phase N #NNN で対応」と明示されているか。理由なくカバーされていないGoal/Use Case/Constraintは HIGH 以上の問題とする。
 
