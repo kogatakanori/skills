@@ -44,61 +44,6 @@ gh api repos/<REPO>/issues/<ISSUE_NUM>/comments --jq '[.[] | select(.body | star
 tasksコメントが見つからない場合は `/arc-planning` を先に実行するよう案内して終了。
 spec（意図）・design（ADR・スコープ）・docsも読み込んで実装の文脈として利用する。
 
-**worktreeのセットアップ（必要な場合のみ）**
-
-以下のいずれかに該当する場合、worktreeを作成してセッションを切り替える：
-- `TASKS_CONTENT` に `<!-- worktree: true -->` が含まれる
-- 起動プロンプトに `WORKTREE_NEEDED=true` が含まれる
-
-該当する場合：
-
-1. 既存 worktree の確認：
-   ```bash
-   ls .claude/worktrees/issue-<N> 2>/dev/null && echo exists || echo not_found
-   ```
-   - **`exists`** → `EnterWorktree` ツールで `path=".claude/worktrees/issue-<N>"` を指定して入る（以降の手順をスキップ）
-   - **`not_found`** → 2〜3 を実行する
-
-2. `.claude/settings.json` に `WorktreeCreate` / `WorktreeRemove` hookが未設定であれば自動セットアップする：
-   1. `.claude/hooks/` ディレクトリを作成
-   2. `../../templates/hooks/worktree-create.sh` を `.claude/hooks/worktree-create.sh` にコピー
-   3. `../../templates/hooks/worktree-remove.sh` を `.claude/hooks/worktree-remove.sh` にコピー
-   4. 両ファイルに実行権限を付与：`chmod +x .claude/hooks/worktree-*.sh`
-   5. `.claude/settings.json` の `hooks` に以下をマージ：
-      ```json
-      {
-        "WorktreeCreate": [{"type": "command", "command": "bash .claude/hooks/worktree-create.sh"}],
-        "WorktreeRemove": [{"type": "command", "command": "bash .claude/hooks/worktree-remove.sh"}]
-      }
-      ```
-
-3. `EnterWorktree` ツールで `name=issue-<N>` を指定してworktreeを新規作成する
-   - `.worktreeinclude` に記載されたファイルが自動コピーされる
-   - `WorktreeCreate` hook が自動実行される
-   - 現在のセッションがworktree内に切り替わる
-
-4. worktree作成後、複雑度を判定して `.claude/worktree-setup.sh` を実行する：
-
-   **複雑度の判定：**
-   - `TASKS_CONTENT` または spec の内容から以下のいずれかに該当する場合 → `heavy`
-     - DB migration / schema 変更を含む
-     - Docker / インフラ構成の変更を含む
-     - 複数サービス間の連携が必要
-     - `<!-- setup: heavy -->` フラグが含まれる
-   - それ以外 → `light`
-
-   **スクリプトの実行：**
-   ```bash
-   # .claude/worktree-setup.sh が存在する場合のみ実行
-   [ -f .claude/worktree-setup.sh ] && bash .claude/worktree-setup.sh "<complexity>"
-   ```
-   - スクリプトが存在しない場合はスキップ（エラーにしない）
-   - `<complexity>` には判定結果（`light` または `heavy`）を渡す
-
-どちらにも該当しない場合は、arc-specifyingで作成済みのブランチのまま実装を進める。
-
-> **直接起動時の注意**: `/arc-implementing` を直接呼び出す場合は、起動プロンプトに `WORKTREE_NEEDED` が含まれないため、`TASKS_CONTENT` の `<!-- worktree: -->` メタデータのみを参照する。arc-planning からの自動移行時は起動プロンプトの `WORKTREE_NEEDED=true/false` も参照する。
-
 ### Step 2: Claude Code Task への登録
 
 Issue コメントから取得した全タスクを `TaskCreate` ツールで登録する（Claude Code UI のスピナーで進捗を表示するため）。
@@ -313,21 +258,6 @@ EOF
 ```
 
 **PR URLを出力する。PRがマージされるとIssueは自動でクローズされる。**
-
-### Step 6: worktreeのクリーンアップ（worktree使用時のみ）
-
-Step 1でworktreeを作成した場合のみ実行する。
-
-PRがマージされたら `ExitWorktree` ツールを `action="remove"` で呼び出してworktreeを終了する。
-
-セッションをまたいで実行しており `ExitWorktree` が使えない場合は以下を実行する：
-
-```bash
-git worktree remove .claude/worktrees/issue-<N>
-git branch -d <branch-name>
-```
-
-worktreeを使用していない場合は何もしない（ブランチは手動で `git branch -d <branch-name>` で削除する）。
 
 ## Notes
 

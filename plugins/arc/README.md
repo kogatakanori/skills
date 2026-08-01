@@ -4,7 +4,7 @@ GitHub IssueからPRまでをAIが自律的に推進するSDLCワークフロー
 
 ## 概要
 
-Arcは7つのスキルで構成され（コアスキル4つ＋bug fix/調査系2つ＋メンテナンス1つ）、仕様策定・技術調査・タスク計画・TDD実装を一貫して自動化します。ユーザーが関与するのは「specの承認」「調査結果の方向性確認」「カバレッジ確認（CRITICAL/HIGH指摘時のみ）」「PR pushの承認」の4点のみです（bug fix/調査系トラックも同様に最小限の人間ゲートで進みます）。
+Arcは6つのスキルで構成され（コアスキル4つ＋bug fix/調査系2つ）、仕様策定・技術調査・タスク計画・TDD実装を一貫して自動化します。ユーザーが関与するのは「specの承認」「調査結果の方向性確認」「カバレッジ確認（CRITICAL/HIGH指摘時のみ）」「PR pushの承認」の4点のみです（bug fix/調査系トラックも同様に最小限の人間ゲートで進みます）。
 
 新機能開発は `/arc-specifying` から始まるspec/design/plan/implementの4フェーズフローを使います。バグ修正やコード理解・設計調査のようにGoal/Use Cases/Acceptance Criteriaを固める必要がないタスクには、spec/designを持たない軽量な `/arc-investigating` → `/arc-bugfixing` トラックを使います（詳細は後述）。
 
@@ -62,10 +62,6 @@ GitHub Issue
       │ ← git push / PR作成の承認
       ▼
    PR作成（Closes #NNN → マージ時にIssue自動クローズ）
-
-# PRマージ後（任意のタイミングで実行）
-/arc-cleaning
-  └─ マージ済みworktreeを検出して削除
 ```
 
 ## bug fix / 調査系トラック（spec/designを持たない軽量フロー）
@@ -104,7 +100,7 @@ GitHub Issue（省略可）
 |------|--------|---------|
 | Spec（Why・ADR） | GitHub Issue コメント | `<!-- arc:spec -->` で識別 |
 | 実現性調査結果 | GitHub Issue コメント | `<!-- arc:design -->` で識別 |
-| Taskリスト | GitHub Issue コメント | `<!-- arc:tasks -->` で識別。`<!-- worktree: true/false -->` メタデータを含む |
+| Taskリスト | GitHub Issue コメント | `<!-- arc:tasks -->` で識別 |
 | ドキュメント（What） | `docs/*.md` | 常に最新版を上書き保存 |
 
 ## スキル一覧
@@ -151,15 +147,6 @@ specをTDDタスクリストに分解し、品質確認後にIssueコメント�
   5. 非機能タスクの有無
 - タスクリストを `<!-- arc:tasks -->` 識別子付きでIssueコメントとして投稿
 - **人間の介入なしに `Agent` ツールで sub-agent を spawn し、`arc-implementing` を新しいコンテキストで実行**
-
-### `/arc-cleaning`
-
-ローカルの `.claude/worktrees/issue-*` を一覧表示し、対応するPRがマージ済みのworktreeを削除する。
-
-- `git worktree list --porcelain` でローカルのworktreeを取得
-- 各worktreeのブランチに対応するPRのマージ状態を `gh pr list` で確認
-- マージ済みのworktreeを確認後に `git worktree remove` と `git branch -d` で削除
-- 未マージのworktreeはそのまま保持
 
 ### `/arc-investigating [<N>]`
 
@@ -239,89 +226,6 @@ spec・plan・taskはGitHub Issueのコメントで管理するため、リポ�
 `arc-investigating` は上記の専用エージェントファイルを持たず、`Explore` エージェントを直接起動する（軽量さ優先のため）。
 
 ## セットアップ（推奨）
-
-### Worktree設定
-
-`/arc-implementing` 実行時（またはarc-planningからの自動移行時）にworktreeが作成されます。初回実行時に hooks が自動セットアップされますが、カスタマイズする場合は以下を参考にしてください。
-
-**`.worktreeinclude`**（プロジェクトルートに配置）
-
-worktree作成時にコピーするファイルを列挙する。ただし `WorktreeCreate` hookを定義した場合はhookが `.worktreeinclude` の処理を担当する（後述）：
-
-```
-.env
-.env.local
-```
-
-以下のスクリプトはarcプラグインの `templates/hooks/` に収録されており、`/arc-implementing` の初回実行時にプロジェクトの `.claude/hooks/` へ自動コピーされます。カスタマイズする場合は以下を参考にしてください。
-
-**`.claude/hooks/worktree-create.sh`**
-
-```bash
-#!/usr/bin/env bash
-# WorktreeCreate hook: worktreeを作成して初期セットアップを行う
-INPUT=$(cat)
-NAME=$(echo "$INPUT"      | jq -r '.worktree_name')
-CWD=$(echo "$INPUT"       | jq -r '.cwd')
-BASE_PATH=$(echo "$INPUT" | jq -r '.base_path')
-
-WORKTREE_PATH="${BASE_PATH}/${NAME}"
-
-# worktreeを作成（ブランチが存在しない場合は新規作成）
-git -C "$CWD" worktree add "$WORKTREE_PATH" -b "$NAME" 2>/dev/null \
-  || git -C "$CWD" worktree add "$WORKTREE_PATH" "$NAME" 2>/dev/null
-
-# .worktreeinclude のファイルをコピー
-# （WorktreeCreate hookを定義するとデフォルトのコピー処理が無効になるため自前で行う）
-if [ -f "$CWD/.worktreeinclude" ]; then
-  while IFS= read -r file || [ -n "$file" ]; do
-    [[ "$file" =~ ^# || -z "$file" ]] && continue
-    if [ -f "$CWD/$file" ]; then
-      mkdir -p "$WORKTREE_PATH/$(dirname "$file")"
-      cp "$CWD/$file" "$WORKTREE_PATH/$file"
-    fi
-  done < "$CWD/.worktreeinclude"
-fi
-
-# 依存関係のインストール（必要に応じてコメントアウトを外す）
-# npm --prefix "$WORKTREE_PATH" install >&2
-# bundle install --gemfile "$WORKTREE_PATH/Gemfile" >&2
-# pip install -r "$WORKTREE_PATH/requirements.txt" >&2
-
-echo "$WORKTREE_PATH"
-```
-
-**`.claude/hooks/worktree-remove.sh`**
-
-```bash
-#!/usr/bin/env bash
-# WorktreeRemove hook: worktreeとブランチを削除する
-INPUT=$(cat)
-WORKTREE_PATH=$(echo "$INPUT" | jq -r '.worktree_path')
-CWD=$(echo "$INPUT"          | jq -r '.cwd')
-
-NAME=$(basename "$WORKTREE_PATH")
-
-git -C "$CWD" worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
-git -C "$CWD" branch -d "$NAME" 2>/dev/null || true
-```
-
-**`.claude/settings.json`**（hookの登録）
-
-```json
-{
-  "hooks": {
-    "WorktreeCreate": [{
-      "type": "command",
-      "command": "bash .claude/hooks/worktree-create.sh"
-    }],
-    "WorktreeRemove": [{
-      "type": "command",
-      "command": "bash .claude/hooks/worktree-remove.sh"
-    }]
-  }
-}
-```
 
 ### パーミッション設定
 

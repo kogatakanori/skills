@@ -98,40 +98,26 @@ CREATE/MODIFY/DELETE単位の具体的な変更対象とテスト要件を特定
 
 問題がある場合はタスクを修正・分割・統合・並び替えして再度チェックする。
 
-### Step 7: worktree使用有無の判断
-
-arc-planningと同じ基準で判断する：
-
-**worktree使用を推奨する条件**（いずれか該当）：
-- タスク総数が10件以上
-- 実装が複数日にわたることが見込まれる
-- 他のブランチでの開発と並行して進める必要がある
-
-該当する場合は `WORKTREE_NEEDED=true`、該当しない場合は `WORKTREE_NEEDED=false` として記録する。
-
-### Step 8: タスクリストをIssueコメントに投稿
+### Step 7: タスクリストをIssueコメントに投稿
 
 ```bash
 gh issue comment ${ISSUE_NUM} --body "$(cat <<'EOF'
 <!-- arc:tasks -->
-<!-- worktree: true -->
 ...タスクリストの内容...
 EOF
 )"
 ```
 
-（`WORKTREE_NEEDED=false` の場合は `<!-- worktree: false -->` にする）
-
 タスク一覧を出力して確認できるようにする。
 
-### Step 9: 実装フェーズへ自動移行
+### Step 8: 実装フェーズへ自動移行
 
 人間の介入なしに実装フェーズへ移行する：
 
 1. "タスク分解が完了しました。実装フェーズを開始します..." と表示する
 2. `Agent` ツールで sub-agent を spawn し、以下の prompt を渡す：
    ```
-   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。WORKTREE_NEEDED=<true/false>。ISSUE_NUM・REPO・WORKTREE_NEEDED はこの prompt の値を使用すること。
+   ISSUE_NUM=<N>、REPO=<owner/repo> のIssueに対して arc-implementing のワークフローを Step 1 から実行してください。ISSUE_NUM・REPO はこの prompt の値を使用すること。
    ```
 
 ## Notes
